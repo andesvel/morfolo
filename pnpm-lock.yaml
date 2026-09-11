@@ -45,7 +45,11 @@ importers:
         specifier: ^4.129.1
         version: 4.129.1
 
-  packages/core: {}
+  packages/core:
+    devDependencies:
+      typescript:
+        specifier: ~6.0.3
+        version: 6.0.3
 
 packages:
 
