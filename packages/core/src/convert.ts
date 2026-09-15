@@ -5,12 +5,16 @@ import type { WorkerRequest, WorkerResponse } from "./worker/protocol.ts";
 type PendingJob = {
   resolve: (result: Blob) => void;
   reject: (error: ConversionError) => void;
+  onProgress?: (pct: number) => void;
 };
 
 let worker: Worker | undefined;
 const pending = new Map<string, PendingJob>();
 
-export function convert(input: ConvertInput): Promise<Blob> {
+export function convert(
+  input: ConvertInput,
+  onProgress?: (pct: number) => void,
+): Promise<Blob> {
   const id = crypto.randomUUID();
   const request: WorkerRequest = {
     id,
@@ -22,7 +26,7 @@ export function convert(input: ConvertInput): Promise<Blob> {
   };
 
   return new Promise((resolve, reject) => {
-    pending.set(id, { resolve, reject });
+    pending.set(id, { resolve, reject, onProgress });
     getWorker().postMessage(request);
   });
 }
@@ -46,23 +50,26 @@ function getWorker(): Worker {
 function onMessage(event: MessageEvent<WorkerResponse>): void {
   const response = event.data;
   const job = pending.get(response.id);
+  if (!job) return;
 
-  if (!job) {
+  if (response.type === "progress") {
+    job.onProgress?.(response.pct);
     return;
   }
 
   pending.delete(response.id);
-
   if (response.type === "success") {
     job.resolve(response.result);
     return;
   }
-
   job.reject(new ConversionError(response.error.message, response.error.code));
 }
 
 function onError(event: ErrorEvent): void {
-  const error = new ConversionError(event.message || "Worker failed", "WORKER_FAILED");
+  const error = new ConversionError(
+    event.message || "Worker failed",
+    "WORKER_FAILED",
+  );
 
   for (const job of pending.values()) {
     job.reject(error);
