@@ -7,5 +7,11 @@ export type ConversionAdapter = {
   readonly kind: AdapterKind;
   readonly from: readonly string[];
   readonly to: readonly string[];
-  convert(file: Blob, to: string, params?: ConvertParams): Promise<Blob>;
+  load?(): Promise<void>;
+  convert(
+    file: Blob,
+    to: string,
+    params?: ConvertParams,
+    onProgress?: (pct: number) => void,
+  ): Promise<Blob>;
 };
