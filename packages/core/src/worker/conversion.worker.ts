@@ -28,12 +28,26 @@ async function handle(request: WorkerRequest): Promise<void> {
       );
     }
 
-    const result = await adapter.convert(request.file, request.to, request.params);
+    const result = await adapter.convert(
+      request.file,
+      request.to,
+      request.params,
+      (pct) => {
+        const progress: WorkerResponse = {
+          id: request.id,
+          type: "progress",
+          pct,
+        };
+        self.postMessage(progress);
+      },
+    );
+
     const response: WorkerResponse = {
       id: request.id,
       type: "success",
       result,
     };
+
     self.postMessage(response);
   } catch (caught) {
     const response: WorkerResponse = {
@@ -41,6 +55,7 @@ async function handle(request: WorkerRequest): Promise<void> {
       type: "error",
       error: toErrorPayload(caught),
     };
+
     self.postMessage(response);
   }
 }
