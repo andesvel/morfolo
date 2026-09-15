@@ -24,4 +24,10 @@ export type WorkerFailure = {
   };
 };
 
-export type WorkerResponse = WorkerSuccess | WorkerFailure;
+export type WorkerProgress = {
+  id: string;
+  type: "progress";
+  pct: number;
+};
+
+export type WorkerResponse = WorkerSuccess | WorkerFailure | WorkerProgress;
