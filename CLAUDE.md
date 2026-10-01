@@ -28,6 +28,8 @@ morfolo/
 - MUST use pnpm workspaces for the monorepo — NEVER add Turborepo, Nx, or other build orchestrators unless explicitly asked
 - MUST use TypeScript strict mode in both packages
 - MUST NOT use the `any` type
+- MUST NOT bundle ffmpeg-core.wasm as a static asset (Workers limit: 25 MiB per file). Load it at runtime with toBlobURL from a CDN, with an exact pinned version kept in a single constant.
+- Only @ffmpeg/ffmpeg and @ffmpeg/util are dependencies. NEVER add @ffmpeg/core or @ffmpeg/core-mt.
 
 **Deploy**
 
