@@ -1,3 +1,6 @@
+import { wasmAdapters } from "./adapters/wasm/index.ts";
+import { findAdapter, registerAdapter } from "./registry.ts";
+import { sourceFormat, toConversionError } from "./shared.ts";
 import { ConversionError } from "./types.ts";
 import type { ConvertInput } from "./types.ts";
 import type { WorkerRequest, WorkerResponse } from "./worker/protocol.ts";
@@ -11,8 +14,37 @@ type PendingJob = {
 let worker: Worker | undefined;
 const pending = new Map<string, PendingJob>();
 
-export function convert(
+for (const adapter of wasmAdapters) {
+  registerAdapter(adapter);
+}
+
+export async function convert(
   input: ConvertInput,
+  onProgress?: (pct: number) => void,
+): Promise<Blob> {
+  const from = sourceFormat(input.file, input.from);
+  const adapter = findAdapter(from, input.to);
+
+  if (adapter) {
+    try {
+      await adapter.load?.();
+      return await adapter.convert(
+        input.file,
+        input.to,
+        input.params,
+        onProgress,
+      );
+    } catch (caught) {
+      throw toConversionError(caught);
+    }
+  }
+
+  return requestWorkerConversion(input, from, onProgress);
+}
+
+function requestWorkerConversion(
+  input: ConvertInput,
+  from: string,
   onProgress?: (pct: number) => void,
 ): Promise<Blob> {
   const id = crypto.randomUUID();
@@ -21,7 +53,7 @@ export function convert(
     type: "convert",
     file: input.file,
     to: input.to,
-    from: input.from,
+    from,
     params: input.params,
   };
 
