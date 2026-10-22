@@ -21,7 +21,7 @@ export function toConversionError(caught: unknown): ConversionError {
     return new ConversionError(caught.message, "CONVERSION_FAILED");
   }
 
-  return new ConversionError("Conversion failed", "CONVERSION_FAILED");
+  return new ConversionError(`Conversion failed: ${String(caught)}`, "CONVERSION_FAILED");
 }
 
 export function toErrorPayload(

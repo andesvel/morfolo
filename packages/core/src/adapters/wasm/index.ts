@@ -24,6 +24,15 @@ const ffmpeg = new FFmpeg();
 let loadPromise: Promise<void> | undefined;
 let queue: Promise<unknown> = Promise.resolve();
 let fileSeq = 0;
+const LOG_TAIL_LIMIT = 20;
+const logTail: string[] = [];
+
+function captureLog({ type, message }: { type: string; message: string }): void {
+  logTail.push(`${type} ${message}`);
+  if (logTail.length > LOG_TAIL_LIMIT) {
+    logTail.shift();
+  }
+}
 
 function runExclusive<T>(task: () => Promise<T>): Promise<T> {
   const run = queue.then(task);
@@ -90,6 +99,7 @@ async function ensureLoaded(): Promise<void> {
         ),
       ]);
       await ffmpeg.load({ coreURL, wasmURL });
+      ffmpeg.on("log", captureLog);
     })().catch((caught: unknown) => {
       loadPromise = undefined;
       throw caught;
@@ -131,6 +141,7 @@ export const wasmAdapters: readonly ConversionAdapter[] = [
     convert: async (file, to, params, onProgress) =>
       runExclusive(async () => {
         await ensureLoaded();
+        logTail.length = 0;
 
         const seq = ++fileSeq;
         const inputPath = `input-${seq}.${EXTENSIONS[file.type] ?? "bin"}`;
@@ -158,7 +169,12 @@ export const wasmAdapters: readonly ConversionAdapter[] = [
           ]);
 
           if (exitCode !== 0) {
-            throw new Error(`ffmpeg exited with code ${exitCode} for ${to}`);
+            const tail = logTail.slice(-5).join(" | ");
+            throw new Error(
+              tail.length > 0
+                ? `ffmpeg exited with code ${exitCode} for ${to}: ${tail}`
+                : `ffmpeg exited with code ${exitCode} for ${to}`,
+            );
           }
 
           const data = await ffmpeg.readFile(outputPath);
