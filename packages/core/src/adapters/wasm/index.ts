@@ -1,24 +1,12 @@
 // Runs on the main thread. Must never be imported from worker/.
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { toBlobURL } from "@ffmpeg/util";
+import { canonicalize, extensionFor } from "../../formats.ts";
 import type { ConversionAdapter } from "../types.ts";
 import type { ConvertParams } from "../../types.ts";
 
 const FFMPEG_CORE_VERSION = "0.12.9";
 const FFMPEG_CORE_BASE_URL = `https://unpkg.com/@ffmpeg/core@${FFMPEG_CORE_VERSION}/dist/esm`;
-
-const EXTENSIONS: Record<string, string> = {
-  "audio/wav": "wav",
-  "audio/mp3": "mp3",
-  "audio/flac": "flac",
-  "audio/ogg": "ogg",
-  "audio/aac": "aac",
-  "audio/m4a": "m4a",
-  "audio/webm": "webm",
-  "video/mp4": "mp4",
-  "video/webm": "webm",
-  "video/ogg": "ogv",
-};
 
 const ffmpeg = new FFmpeg();
 let loadPromise: Promise<void> | undefined;
@@ -43,8 +31,8 @@ function runExclusive<T>(task: () => Promise<T>): Promise<T> {
   return run;
 }
 
-function extensionFor(mime: string): string {
-  const ext = EXTENSIONS[mime];
+function extensionForFile(mime: string): string {
+  const ext = extensionFor(canonicalize(mime) ?? mime);
   if (!ext) {
     throw new Error(`Unsupported ffmpeg format: ${mime}`);
   }
@@ -60,10 +48,8 @@ function flagArgs(to: string, params?: ConvertParams): string[] {
   const isVideo = to.startsWith("video/");
   const bitrateFlag = isVideo ? "-b:v" : "-b:a";
 
-  if (typeof params.bitrate === "string" && params.bitrate !== "") {
-    args.push(bitrateFlag, params.bitrate);
-  } else if (typeof params.bitrate === "number") {
-    args.push(bitrateFlag, String(params.bitrate));
+  if (typeof params.bitrateKbps === "number") {
+    args.push(bitrateFlag, `${params.bitrateKbps}k`);
   }
 
   if (isVideo && typeof params.crf === "number") {
@@ -115,11 +101,11 @@ export const wasmAdapters: readonly ConversionAdapter[] = [
     kind: "wasm",
     from: [
       "audio/wav",
-      "audio/mp3",
+      "audio/mpeg",
       "audio/flac",
       "audio/ogg",
       "audio/aac",
-      "audio/m4a",
+      "audio/mp4",
       "audio/webm",
       "video/mp4",
       "video/webm",
@@ -127,11 +113,11 @@ export const wasmAdapters: readonly ConversionAdapter[] = [
     ],
     to: [
       "audio/wav",
-      "audio/mp3",
+      "audio/mpeg",
       "audio/flac",
       "audio/ogg",
       "audio/aac",
-      "audio/m4a",
+      "audio/mp4",
       "audio/webm",
       "video/mp4",
       "video/webm",
@@ -144,8 +130,10 @@ export const wasmAdapters: readonly ConversionAdapter[] = [
         logTail.length = 0;
 
         const seq = ++fileSeq;
-        const inputPath = `input-${seq}.${EXTENSIONS[file.type] ?? "bin"}`;
-        const outputPath = `output-${seq}.${extensionFor(to)}`;
+        const inputExt =
+          extensionFor(canonicalize(file.type) ?? file.type) ?? "bin";
+        const inputPath = `input-${seq}.${inputExt}`;
+        const outputPath = `output-${seq}.${extensionForFile(to)}`;
 
         const reportProgress = ({ progress }: { progress: number }): void => {
           if (progress >= 0) {
