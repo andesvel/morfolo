@@ -4,7 +4,7 @@ export const canvasAdapters: readonly ConversionAdapter[] = [
   {
     id: "canvas-adapter",
     kind: "canvas",
-    from: ["image/png", "image/jpeg", "image/webp", "image/bmp", "image/gif"],
+    from: ["image/png", "image/jpeg", "image/webp", "image/bmp"],
     to: ["image/png", "image/jpeg", "image/webp"],
     convert: async (file, to, params, onProgress) => {
       const imageBitmap = await createImageBitmap(file);
