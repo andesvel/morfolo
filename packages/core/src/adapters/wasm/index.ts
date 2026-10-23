@@ -71,23 +71,88 @@ async function cleanup(path: string): Promise<void> {
   }
 }
 
+export type EngineStatus = "idle" | "loading" | "ready" | "error";
+
+type DownloadEvent = {
+  url: string | URL;
+  total: number;
+  received: number;
+};
+
+let engine: EngineStatus = "idle";
+let warmupListener: ((pct: number) => void) | undefined;
+
+export function engineStatus(): EngineStatus {
+  return engine;
+}
+
+/**
+ * Warms up the ffmpeg engine ahead of the first conversion.
+ * onProgress receives 0..100 (byte-weighted across both core files),
+ * or -1 while any download size is unknown (missing Content-Length).
+ */
+export function warmupEngine(
+  onProgress?: (pct: number) => void,
+): Promise<void> {
+  if (onProgress) {
+    warmupListener = onProgress;
+  }
+  return ensureLoaded();
+}
+
+function createDownloadTracker(
+  urls: readonly string[],
+): (event: DownloadEvent) => void {
+  const totals = new Map<string, number>(urls.map((url) => [url, -1]));
+  const received = new Map<string, number>(urls.map((url) => [url, 0]));
+
+  return (event) => {
+    const url = String(event.url);
+    totals.set(url, event.total);
+    received.set(url, event.received);
+
+    let anyUnknown = false;
+    let totalBytes = 0;
+    for (const value of totals.values()) {
+      if (value < 0) {
+        anyUnknown = true;
+      }
+      totalBytes += Math.max(0, value);
+    }
+    let receivedBytes = 0;
+    for (const value of received.values()) {
+      receivedBytes += value;
+    }
+
+    if (anyUnknown || totalBytes <= 0) {
+      warmupListener?.(-1);
+      return;
+    }
+
+    const pct = Math.round((receivedBytes / totalBytes) * 100);
+    warmupListener?.(Math.max(0, Math.min(100, pct)));
+  };
+}
+
 async function ensureLoaded(): Promise<void> {
   if (!loadPromise) {
+    engine = "loading";
     loadPromise = (async () => {
+      const coreJsUrl = `${FFMPEG_CORE_BASE_URL}/ffmpeg-core.js`;
+      const coreWasmUrl = `${FFMPEG_CORE_BASE_URL}/ffmpeg-core.wasm`;
+      const tracker = createDownloadTracker([coreJsUrl, coreWasmUrl]);
       const [coreURL, wasmURL] = await Promise.all([
-        toBlobURL(
-          `${FFMPEG_CORE_BASE_URL}/ffmpeg-core.js`,
-          "text/javascript",
-        ),
-        toBlobURL(
-          `${FFMPEG_CORE_BASE_URL}/ffmpeg-core.wasm`,
-          "application/wasm",
-        ),
+        toBlobURL(coreJsUrl, "text/javascript", true, tracker),
+        toBlobURL(coreWasmUrl, "application/wasm", true, tracker),
       ]);
       await ffmpeg.load({ coreURL, wasmURL });
       ffmpeg.on("log", captureLog);
+      engine = "ready";
+      warmupListener = undefined;
     })().catch((caught: unknown) => {
+      engine = "error";
       loadPromise = undefined;
+      warmupListener = undefined;
       throw caught;
     });
   }
