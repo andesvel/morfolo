@@ -39,3 +39,16 @@ jobs:
 
       - name: Build (core dist, then web; web build includes tsc -b)
         run: pnpm build
+
+  # Every commit must follow Conventional Commits: the version bot reads them.
+  commitlint:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: wagoid/commitlint-github-action@v6
+        with:
+          configFile: commitlint.config.mjs

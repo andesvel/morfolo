@@ -1,0 +1,112 @@
+name: Release
+
+# The version bot. On every push to main, release-please reads the
+# Conventional Commits since the last release and keeps one Release PR open
+# (versions + CHANGELOGs for core and web). Merging that PR tags the
+# releases, publishes @morfolo/core to npm and opens a PR to sync main back
+# into dev.
+#
+# It acts as the morfolo-release GitHub App, not GITHUB_TOKEN: PRs opened with
+# GITHUB_TOKEN do not trigger workflows, so the required `ci` check would
+# never run on them. Needs secrets RELEASE_BOT_APP_ID and
+# RELEASE_BOT_PRIVATE_KEY (see CONTRIBUTING in README.md).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
+      core_released: ${{ steps.release.outputs['packages/core--release_created'] }}
+      core_tag: ${{ steps.release.outputs['packages/core--tag_name'] }}
+    steps:
+      - uses: actions/create-github-app-token@v1
+        id: bot
+        with:
+          app-id: ${{ secrets.RELEASE_BOT_APP_ID }}
+          private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          token: ${{ steps.bot.outputs.token }}
+          target-branch: main
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  publish-core:
+    needs: release-please
+    if: needs.release-please.outputs.core_released == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: npm
+      url: https://www.npmjs.com/package/@morfolo/core
+    permissions:
+      contents: read
+      # npm trusted publishing (OIDC) and provenance attestations.
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-please.outputs.core_tag }}
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.14.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - run: pnpm install --frozen-lockfile
+
+      # prepublishOnly builds dist. With trusted publishing configured on npm,
+      # OIDC authenticates and NPM_TOKEN can be left unset; the token is only
+      # needed for the very first publish, before the package exists.
+      - name: Publish
+        working-directory: packages/core
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  sync-dev:
+    needs: release-please
+    if: needs.release-please.outputs.releases_created == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/create-github-app-token@v1
+        id: bot
+        with:
+          app-id: ${{ secrets.RELEASE_BOT_APP_ID }}
+          private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+
+      # Release commits land on main only; bring them (versions, CHANGELOGs,
+      # manifest) back to dev so the next release starts from the right place.
+      - name: Open main -> dev sync PR
+        env:
+          GH_TOKEN: ${{ steps.bot.outputs.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ -z "$(gh api "repos/$REPO/compare/dev...main" --jq '.ahead_by | select(. > 0)')" ]; then
+            echo "dev already contains main"; exit 0
+          fi
+          url=$(gh pr list --repo "$REPO" --base dev --head main --state open --json url --jq '.[0].url')
+          if [ -z "$url" ]; then
+            url=$(gh pr create --repo "$REPO" --base dev --head main \
+              --title "chore: sync main into dev after release" \
+              --body "Automated: brings the release commits (versions, CHANGELOGs) from main back to dev.")
+          fi
+          gh pr merge "$url" --auto --merge
