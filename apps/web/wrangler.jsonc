@@ -2,6 +2,10 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "morfolo",
   "compatibility_date": "2026-09-07",
+  // Served at morfolo.andesvel.workers.dev; no custom domain.
+  "workers_dev": true,
+  // Lets CI upload per-PR versions under <alias>-morfolo.andesvel.workers.dev.
+  "preview_urls": true,
   "assets": {
     "not_found_handling": "single-page-application"
   }
