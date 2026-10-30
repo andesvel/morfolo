@@ -8,7 +8,7 @@ morfolo/
 ├── packages/
 │ └── core/ # Conversion engine: workers, WASM/Canvas adapters by format. No UI, no framework.
 └── apps/
-└── web/ # Single-page tool: drop zone + parameter tabs, no authentication, no other routes.
+└── web/ # SPA with three hash-routed views (landing, convert, settings), no authentication.
 
 ## Constraints
 
@@ -23,13 +23,30 @@ morfolo/
 **Stack**
 
 - `apps/web` MUST use Vite + React + TypeScript — NEVER introduce Next.js, Astro, or any other meta-framework
-- MUST NOT add any routing library — single page, no other routes, no auth
-- MUST use plain React state/hooks — NEVER add Redux, Zustand, or similar unless explicitly asked
+- Routing: wouter with hash location (`#/`, `#/convert`, `#/settings`). Three views only: landing, convert, settings. No auth, no server routes
+- Shared state: Zustand stores in apps/web/src/stores (conversion queue, settings). Local UI state stays in React hooks. NEVER add Redux or another state library
+- Keep dependencies lean: add a package only when a task needs it
 - MUST use pnpm workspaces for the monorepo — NEVER add Turborepo, Nx, or other build orchestrators unless explicitly asked
 - MUST use TypeScript strict mode in both packages
 - MUST NOT use the `any` type
 - MUST NOT bundle ffmpeg-core.wasm as a static asset (Workers limit: 25 MiB per file). Load it at runtime with toBlobURL from a CDN, with an exact pinned version kept in a single constant.
 - Only @ffmpeg/ffmpeg and @ffmpeg/util are dependencies. NEVER add @ffmpeg/core or @ffmpeg/core-mt.
+
+**Design**
+
+- Read apps/web/DESIGN.md before touching any UI. It holds the tokens, type scale and component specs.
+- Styling: Tailwind CSS v4. UI primitives: shadcn/ui components copied into apps/web/src/components/ui and restyled. Add only the components a task needs. NEVER touch packages/core for UI.
+- Visual language: raw brutalism on a Swiss grid (visible hairline grid, asymmetric display type, numbered sections). Hard borders; shadows, if any, are hard offsets with zero blur. NEVER use gradients, glass/backdrop-blur or any static blur, or emojis as icons. `filter: blur()` is allowed ONLY inside entry/exit animations.
+- Palette: ink neutrals, a muted frosted-gray surface (the `bone` tokens; "frosted" is the color, never a blur) and ONE accent token (--signal, electric blue). Colors MUST go through tokens; NEVER hardcode hex values in components. NEVER use shadcn's --accent as the brand color (it is the hover background token).
+- On a --signal fill, text MUST be bone, NEVER ink. Focus ring is ink.
+- Radius 0 everywhere, no exceptions.
+- Spacing: Tailwind default scale only. NEVER use arbitrary values like p-[13px].
+- Fonts: Archivo Black (display), JetBrains Mono (labels/metadata), system sans stack for body. NEVER add Inter. Self-hosted woff2, latin subset, only the weights used. NEVER load fonts or assets from third-party CDNs (the pinned ffmpeg core is the only documented exception).
+- States (loading, progress, error, success, disabled, selected) MUST NOT rely on color alone: use text labels, inversion, or patterns.
+- Motion: functional and unhurried (200-520ms via the --duration-* tokens, ease-out or linear). Layout changes (rows added/removed, panels opening) animate their height instead of jumping. View changes use the View Transitions API; entering text and elements may fade in from a small blur. NEVER bounce or spring. Everything MUST collapse to instant under prefers-reduced-motion.
+- Icons: lucide-react only, square caps and miter joins, used as structural marks (crosshairs, arrows, registration marks, section glyphs). Never as illustrations, never as the only carrier of meaning. Brand marks lucide lacks (the GitHub mark) use the official simple-icons SVG, never a redraw.
+- Anti-slop: NEVER add decorative status dots, fake screenshots, hand-rolled SVG illustrations, or em-dashes in UI copy. The landing view introduces the tool with real data (supported formats, privacy note); no invented features, stats or testimonials.
+- One theme at launch.
 
 **Deploy**
 
@@ -39,4 +56,3 @@ morfolo/
 ## Pending (DO NOT proceed—ask before moving forward with this)
 
 - Testing: no framework or defined strategy yet
-- Which format should be implemented first (images / documents / audio-video) within the "a little bit of everything" scope

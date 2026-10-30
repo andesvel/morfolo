@@ -1,0 +1,69 @@
+# DESIGN (apps/web)
+
+Tokens live in src/styles/tokens.css. Never hardcode values.
+
+## Direction
+Swiss grid + raw brutalism. Take from Swiss: a visible hairline grid (4 columns over max-w-6xl, `--color-rule`), asymmetric indented display type, big section numbers (01 / 02 / 03), hollow ghost type behind heroes (`.text-ghost`). Take from brutalism/cyber: the page as a grid of bordered cells, mono metadata in cell corners, corner brackets on the drop zone, registration crosses, one signal block per view.
+
+## Grid alignment
+- The background grid (GridLines) is 4 columns over max-w-6xl: a left hairline per column plus a right one on the last.
+- Views use the full max-w-6xl width with NO horizontal padding on the container. Text blocks add `GUTTER` (lib/grid.ts); bordered blocks run edge to edge.
+- Rows of cells use `CELLS` on the row and `CELL` on each cell (left + bottom border, right edge drawn by a pseudo-element). Column starts then sit on the exact grid pixels. Cell counts per row must divide the grid: 4, 2 or 1 (or 3 inside a 3-column span). When a row can end short (dynamic lists like ALL TO), complete it with `fillerClasses()` empty cells so every real cell is closed.
+- Interactive content (tabs, queue, choosers, panels, inputs, secondary buttons) sits on a `bone` fill so it never collides with the lines. Display titles stay on the bare grid.
+- Text drawn straight on the page wraps its words in `<span className="cut">`: a bone background per line that cuts the hairlines behind it.
+
+## Hero
+- Full height under the sticky header on every screen (`hero-fill`). The display size is bounded by viewport height (`min(13vw, 16svh)`) so text and the scroll cue always fit.
+- Signal accents, all on grid coordinates: a signal block over the last column with the real format counts, 8px signal squares where interior grid lines meet the hero's top edge, and the signal scroll-cue box.
+
+## Registration marks
+`<RegisterMarks at={[...]} edge>`: 8px signal squares centered where grid lines cross a rule.
+- Header: one on the logo cell's bottom-left corner, centered on the intersection of the first grid line and the rule below the logo (header bottom on md+, logo/nav rule on mobile). It lives in the header, so it stays put on scroll and on every view.
+- Convert and Settings: on the left end of each section header rule.
+- Nowhere else: not on the landing's content rows (tried, too busy), not next to the active tab, not on the footer, never inside content.
+
+## Help
+- Tooltips: `<Hint label>` is a square "?" next to a label; opens on hover, focus and tap. Every format option carries a `help` string in lib/format-options.ts; section headers and settings rows take `help` too.
+- Landing FAQ: radix accordion in a bordered box over the last 3 columns. Answers state only what the app really does.
+
+## Selection
+Page text is not selectable (`user-select: none` on body). Inputs and `.selectable` opt back in: file names, output names and error messages.
+
+## Kickers and numbering
+- No kicker above view titles (the header already says where you are). Numbers only for real order: the convert flow sections (01 INPUT to 04 RUN), the HOW steps, and the nav.
+
+## Palette
+- `bone*` tokens are a frosted, muted gray (the color only, never a blur). `ink*` are near-black neutrals. `--signal` is electric blue, the only accent.
+- `--color-rule` is the hairline color for the background grid.
+
+## Views
+Hash-routed with wouter: `#/` index (landing), `#/convert`, `#/settings`. Header and footer are shared. Each view opens with a mono kicker ("02 · TOOL"), a display title ending in a period, and a short body paragraph.
+
+## Motion
+- Tokens: `--duration-fast` 200ms, `--duration-base` 420ms, `--duration-slow` 520ms, `--stagger` 80ms.
+- View changes: View Transitions API. Header, footer and grid have their own `view-transition-name` and do not animate. The old view leaves in `fast` (fade + blur 6px), the new one enters in `base`. The nav indicator bar slides between items in `slow`.
+- Entry: `.reveal` (or `<Reveal i={n}>`) fades in from blur 10px and 0.75rem below, staggered by `--stagger`.
+- Height changes: `collapse-box` (grid rows 0fr/1fr) grows on mount through @starting-style and collapses with `data-open="false"`. Queue rows play it before the store drops them (`leaving` in the conversion store).
+- Blur exists only inside these animations. `prefers-reduced-motion` makes everything instant.
+
+## Icons
+lucide-react, square caps and miter joins (global rule in app.css). Used as marks: Plus (registration), Crosshair, ArrowUpRight, ArrowRight, ArrowDown, X, Asterisk, Cpu. Always next to text or with an aria-label.
+
+## Type
+- Display/headings: Archivo Black, uppercase, tight tracking. Section titles end with a period ("CONVERT."). Use clamp() for big sizes.
+- Label: JetBrains Mono Medium 11px, uppercase, tracking 8%. For field labels, metadata, tabs.
+- Detail: JetBrains Mono 13px/150%. Numbers (file size, percent): JetBrains Mono Medium 18px.
+- Body: system sans 16px/155% (14px small). Button: system sans bold 14px, uppercase, tracking 6%.
+
+## Components
+- Top bar: bone bg, 1px ink bottom border. Wordmark left (display font), nav/tabs center (label style, active item bold), utility link right with arrow glyph. Optional black strip above or below with tiny mono text.
+- Footer: black bar, bone mono text, left = (c) year + license, right = privacy note. Copy MUST be precise: "files stay on your device", NEVER "nothing leaves your device" (the ffmpeg core is fetched from a CDN).
+- Section header: "NN · TITLE" left and "NN / TT" right, both label style, with a 1px ink rule below and generous space before the content.
+- Field: label above (label style, "· OPTIONAL" suffix when needed), input below (square, bone bg, ink border, ~56px tall, 16px text, horizontal padding 16-20px), helper text under it in label style. Short related fields share a row (2-3 columns, 16px gap, 24px between rows). Border 2px per the kit's foundations (the screenshot looks thinner: verify in Figma). Focus: 2px ink outline (proposed). Error: error-colored border plus a text message prefixed "ERROR:" (proposed).
+- Buttons: primary = signal fill, bone text (solid actions: RESET, CLEAR CACHE, per-row CONVERT); secondary = transparent, 2px ink border, ink text; accent = signal fill, bone text. Square, uppercase. End-of-flow CTA is full width (~72px) and names the action, e.g. "CONVERT — WAV → MP3". Hover = the button lifts up-left by the shadow offset and shadow-hard-sm appears where it was (`ease-press`, --duration-fast); pressed = back to rest with no shadow. Full-bleed buttons (dialog footer, ghost) stay flat.
+- Badge: mono 11px uppercase, square. Three styles: ink fill, signal fill, outline.
+- Selectable option (target format): 1px ink border box, title uppercase bold, mono sub-label, value right-aligned. Selected = signal fill with bone text plus a SELECTED label or bold weight (color never carries the state alone). Same for codec/option chips, active switches (which also print ON) and the nav indicator bar.
+- Panel (file list / queue / result): bone-soft bg, 1px ink border, mono header with "§" prefix, row separators 1px bone-deep. Row = name (truncate with ellipsis, full name in title attr; the kit's own mockup clips a long name), mono meta (SIZE · FORMAT), right-aligned status or percent.
+- Progress (proposed): square box with 2px ink border and ink fill, mono percent on the right, text label "CONVERTING 42%". Indeterminate = striped pattern.
+- Elevation: shadow-hard-sm/md/lg on cards; shadow-hard-signal on the drop zone while dragging over it.
+- Drop zone: `pattern-hazard` (wide bone-deep diagonal stripes on bone-soft). Its icon and texts sit on bone-soft fills so they cut the stripes. Corners ink; signal while dragging.

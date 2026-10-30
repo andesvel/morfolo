@@ -1,0 +1,153 @@
+/* Entry reveal: fade in from a small blur. Stagger with style={{ "--i": n }}. */
+@keyframes reveal {
+  from {
+    opacity: 0;
+    filter: blur(10px);
+    translate: 0 0.75rem;
+  }
+}
+
+@layer utilities {
+  .reveal {
+    animation: reveal var(--duration-base) var(--ease-out) both;
+    animation-delay: calc(var(--i, 0) * var(--stagger));
+  }
+}
+
+/* View transitions: chrome stays put, only the view swaps. */
+.vt-header {
+  view-transition-name: site-header;
+}
+
+.vt-footer {
+  view-transition-name: site-footer;
+}
+
+.vt-grid {
+  view-transition-name: site-grid;
+}
+
+.vt-view {
+  view-transition-name: view;
+}
+
+.vt-nav-indicator {
+  view-transition-name: nav-indicator;
+}
+
+@keyframes view-out {
+  to {
+    opacity: 0;
+    filter: blur(6px);
+  }
+}
+
+@keyframes view-in {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+  }
+}
+
+::view-transition-old(root),
+::view-transition-new(root),
+::view-transition-old(site-header),
+::view-transition-new(site-header),
+::view-transition-old(site-footer),
+::view-transition-new(site-footer),
+::view-transition-old(site-grid),
+::view-transition-new(site-grid) {
+  animation: none;
+}
+
+::view-transition-group(view) {
+  animation: none;
+}
+
+::view-transition-old(view) {
+  animation: view-out var(--duration-fast) linear both;
+}
+
+::view-transition-new(view) {
+  animation: view-in var(--duration-base) var(--ease-out) both;
+}
+
+::view-transition-group(nav-indicator) {
+  animation-duration: var(--duration-slow);
+  animation-timing-function: var(--ease-out);
+}
+
+/* Scroll cue: the arrow slides down out of its box and re-enters from the top. Linear, no bounce. */
+@keyframes scroll-cue {
+  0%,
+  30% {
+    translate: 0 0;
+    opacity: 1;
+  }
+  60% {
+    translate: 0 1.25rem;
+    opacity: 0;
+  }
+  61% {
+    translate: 0 -1.25rem;
+    opacity: 0;
+  }
+  100% {
+    translate: 0 0;
+    opacity: 1;
+  }
+}
+
+.scroll-cue {
+  animation: scroll-cue 2.4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .scroll-cue {
+    animation: none;
+  }
+
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+/* Accordion panels grow from and shrink to their measured height. */
+@keyframes accordion-down {
+  from {
+    height: 0;
+    opacity: 0;
+    filter: blur(6px);
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+    opacity: 0;
+    filter: blur(6px);
+  }
+}
+
+.accordion-content[data-state="open"] {
+  animation: accordion-down var(--duration-slow) var(--ease-out);
+}
+
+.accordion-content[data-state="closed"] {
+  animation: accordion-up var(--duration-base) var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .accordion-content[data-state] {
+    animation: none;
+  }
+}

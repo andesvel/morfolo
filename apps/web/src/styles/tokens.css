@@ -1,0 +1,41 @@
+@import "tailwindcss";
+@import "./fonts.css";
+@import "./app.css";
+@import "./motion.css";
+
+@theme {
+  --color-ink: #0B0C0E;
+  --color-ink-soft: #24262A;
+  --color-ink-mute: #3B3E43;
+  /* "bone" = the frosted, muted gray surface. Names kept for continuity. */
+  --color-bone: #E6E7E4;
+  --color-bone-soft: #DCDDDA;
+  --color-bone-deep: #C5C7C3;
+  --color-rule: color-mix(in oklab, var(--color-ink) 16%, transparent);
+  --color-signal: #2F3CFF;
+  --color-signal-deep: #1E27C7;
+  --color-success: #1F4A2E;
+  --color-warning: #8A4A00;
+  --color-error: #7A1010;
+
+  --font-display: "Archivo Black", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  /* --font-sans: Tailwind's default system stack, left untouched */
+
+  --shadow-hard-sm: 4px 4px 0 0 var(--color-ink);
+  --shadow-hard-md: 8px 8px 0 0 var(--color-ink);
+  --shadow-hard-lg: 12px 12px 0 0 var(--color-ink);
+  --shadow-hard-signal: 6px 6px 0 0 var(--color-signal);
+
+  --radius: 0;
+
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --duration-fast: 200ms;
+  --duration-base: 420ms;
+  --duration-slow: 520ms;
+  --stagger: 80ms;
+
+  /* Sticky header heights: strip 1.5rem + one 3.5rem bar (md+) or two (below md), plus rules */
+  --header-h: calc(5rem + 1px);
+  --header-h-sm: calc(8.5rem + 2px);
+}
