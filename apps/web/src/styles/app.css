@@ -1,0 +1,222 @@
+@layer base {
+  /* A tool, not a document: chrome isn't selectable. Opt back in with .selectable. */
+  body {
+    background: var(--color-bone);
+    color: var(--color-ink);
+    -webkit-user-select: none;
+    user-select: none;
+    /* Registration marks straddle the outer grid lines; never scroll sideways for them. */
+    overflow-x: clip;
+  }
+
+  /* Tailwind v4 resets buttons to the default cursor; anything clickable points. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  label[for] {
+    cursor: pointer;
+  }
+
+  input,
+  textarea,
+  [contenteditable],
+  .selectable {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--color-signal);
+    color: var(--color-bone);
+  }
+
+  /* lucide icons: square caps and miter joins to match the hard edges */
+  svg.lucide {
+    stroke-linecap: square;
+    stroke-linejoin: miter;
+  }
+}
+
+@layer components {
+  .label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.4;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .detail {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .display {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+    line-height: 0.88;
+  }
+
+  /* Spanish capitals carry accents (Á, É, Ú) above cap height: open the leading. */
+  :lang(es) .display {
+    line-height: 0.98;
+  }
+
+  /* Bounded by height too: the full-height hero must fit its text and scroll cue. */
+  .display-hero {
+    font-size: clamp(3rem, min(13vw, 16svh), 11rem);
+  }
+
+  .display-xl {
+    font-size: clamp(2.5rem, 8vw, 6rem);
+  }
+
+  .display-lg {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+  }
+
+  .display-md {
+    font-size: clamp(1.5rem, 3.5vw, 2.5rem);
+  }
+
+  /* Hollow ghost type behind headings (Swiss reference) */
+  .text-ghost {
+    color: transparent;
+    -webkit-text-stroke: 1px var(--color-rule);
+  }
+
+  /*
+   * Text drawn straight on the page (no surface) cuts the background grid
+   * lines behind it, line by line, for legibility. Use on inline spans.
+   */
+  .cut {
+    background-color: var(--color-bone);
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    padding: 0.25rem;
+    margin-inline: -0.25rem;
+  }
+
+  /* Number/format lists set in display type: lighter slashes between items */
+  .slashes > *:not(:last-child)::after {
+    content: "/";
+    margin-inline: 0.35em;
+    color: var(--color-ink-mute);
+  }
+
+  /* Toast icon box per type (sonner sets data-type on the toast). */
+  [data-sonner-toast][data-type="success"] [data-icon] {
+    border-color: var(--color-signal);
+    background: var(--color-signal);
+    color: var(--color-on-signal);
+  }
+
+  [data-sonner-toast][data-type="error"] [data-icon] {
+    border-color: var(--color-error);
+    color: var(--color-error);
+  }
+
+  [data-sonner-toast][data-type="warning"] [data-icon] {
+    border-color: var(--color-warning);
+    color: var(--color-warning);
+  }
+
+  /* Wide construction-zone stripes behind the drop zone, in a faint signal tint; hard stops, never a fade. */
+  .pattern-hazard {
+    background-color: var(--color-bone-soft);
+    background-image: repeating-linear-gradient(
+      -45deg,
+      var(--color-hazard) 0 16px,
+      transparent 16px 32px
+    );
+  }
+
+  /* Hard-stop stripes for indeterminate progress; a pattern, not a fade */
+  .pattern-stripes {
+    background-image: repeating-linear-gradient(
+      -45deg,
+      var(--color-ink) 0 6px,
+      transparent 6px 12px
+    );
+  }
+}
+
+/*
+ * Display line sized to its cell, so the longest word never overflows:
+ * put @container on the cell. ~9 wide glyphs fit at 9cqi.
+ */
+@utility fit-cell {
+  font-size: clamp(1rem, 9cqi, 1.875rem);
+}
+
+/* Big counts in a narrow cell: put @container on the cell. */
+@utility fit-count {
+  font-size: clamp(1.25rem, 16cqi, 2.25rem);
+}
+
+/* The landing hero fills the first viewport under the sticky header. */
+@utility hero-fill {
+  min-height: calc(100svh - var(--header-h-sm));
+
+  @media (width >= 48rem) {
+    min-height: calc(100svh - var(--header-h));
+  }
+}
+
+/*
+ * Height that animates in and out: grid rows 0fr <-> 1fr. Mounting animates
+ * through @starting-style; set data-open="false" to collapse before removal.
+ */
+@utility collapse-box {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition:
+    grid-template-rows var(--duration-slow) var(--ease-out),
+    opacity var(--duration-base) linear,
+    filter var(--duration-base) linear;
+
+  & > * {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  &[data-open="false"] {
+    grid-template-rows: 0fr;
+    opacity: 0;
+    filter: blur(6px);
+  }
+
+  @starting-style {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+}
+
+/* Buttons lifting off their hard shadow on hover, pressed flat on click. */
+@utility ease-press {
+  transition:
+    translate var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+/* Padding and type size that change with state (drop zone going compact). */
+@utility ease-size {
+  transition:
+    padding var(--duration-slow) var(--ease-out),
+    font-size var(--duration-slow) var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .collapse-box,
+  .ease-size,
+  .ease-press {
+    transition: none;
+  }
+}
