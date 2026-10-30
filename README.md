@@ -4,6 +4,11 @@
 
 [morfolo.andesvel.workers.dev](https://morfolo.andesvel.workers.dev) · [`@morfolo/core` on npm](https://www.npmjs.com/package/@morfolo/core) · [Issues](https://github.com/andesvel/morfolo/issues)
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/landing-dark.png">
+  <img alt="Morfolo landing page: FILES IN. FILES OUT. headline on a four-column grid, with the format table counts in a blue block" src="docs/screenshots/landing-light.png">
+</picture>
+
 Morfolo is a file converter that runs entirely client-side. Nothing is uploaded: images are converted with the Canvas API in a Web Worker, audio and video with ffmpeg compiled to WebAssembly, all inside the tab. The only download is the ffmpeg engine itself, fetched once from a CDN and cached.
 
 This repository holds two things:
@@ -31,6 +36,16 @@ This repository holds two things:
 **Interface**
 - Light, dark and automatic themes; English and Spanish.
 - Keyboard accessible, states never conveyed by color alone, motion off under `prefers-reduced-motion`.
+
+## Screens
+
+| Convert: queue, per-row formats, zip | Per-format options (dark) |
+|---|---|
+| ![Convert view with two PNGs converted to WEBP, ready to download or zip, and a WAV queued for M4A](docs/screenshots/convert-light.png) | ![M4A options: AAC or ALAC codec, bitrate chips and an advanced section](docs/screenshots/options-dark.png) |
+
+| Settings (dark) | Mobile |
+|---|---|
+| ![Settings view with theme and language controls](docs/screenshots/settings-dark.png) | <img alt="Landing page on a phone" src="docs/screenshots/mobile-light.png" width="280"> |
 
 ## The package
 
