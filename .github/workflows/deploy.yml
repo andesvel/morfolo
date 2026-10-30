@@ -50,13 +50,29 @@ jobs:
         working-directory: apps/web
         run: pnpm exec wrangler deploy
 
+      # Preview versions can only be uploaded to a Worker that already exists,
+      # and it is first created by the production deploy on main. Until then,
+      # skip with a warning instead of failing the PR.
       - name: Upload preview version
+        id: preview
         if: github.event_name == 'pull_request'
         working-directory: apps/web
-        run: pnpm exec wrangler versions upload --preview-alias "pr-${{ github.event.pull_request.number }}"
+        run: |
+          set +e
+          pnpm exec wrangler versions upload --preview-alias "pr-${{ github.event.pull_request.number }}" 2>&1 | tee wrangler.log
+          status=${PIPESTATUS[0]}
+          set -e
+          if [ "$status" -ne 0 ] && grep -q "Worker that does not yet exist" wrangler.log; then
+            echo "::warning::No preview yet: the morfolo Worker is created by the first production deploy (merge to main)."
+            echo "uploaded=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "uploaded=true" >> "$GITHUB_OUTPUT"
+          exit "$status"
 
       - name: Resolve URL
         id: url
+        if: github.event_name != 'pull_request' || steps.preview.outputs.uploaded == 'true'
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             echo "url=https://pr-${{ github.event.pull_request.number }}-morfolo.andesvel.workers.dev" >> "$GITHUB_OUTPUT"
@@ -65,4 +81,5 @@ jobs:
           fi
 
       - name: Summary
+        if: steps.url.outputs.url != ''
         run: echo "Deployed to ${{ steps.url.outputs.url }}" >> "$GITHUB_STEP_SUMMARY"
