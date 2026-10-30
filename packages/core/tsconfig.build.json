@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "dist",
+    "rootDir": "src",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    // src/ is not published; keep the maps self-contained.
+    "inlineSources": true,
+    // Source imports use .ts extensions; emit rewrites them to .js.
+    "rewriteRelativeImportExtensions": true
+  },
+  "include": ["src"]
+}

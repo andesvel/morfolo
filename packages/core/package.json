@@ -1,19 +1,58 @@
 {
   "name": "@morfolo/core",
-  "private": true,
-  "license": "AGPL-3.0-only",
+  "version": "0.1.0",
+  "description": "Client-side file conversion for the browser: images via Canvas in a Web Worker, audio and video via ffmpeg.wasm. Files never leave the device.",
+  "license": "MPL-2.0",
+  "author": "Andres Estrada (https://github.com/andesvel)",
+  "homepage": "https://github.com/andesvel/morfolo/tree/dev/packages/core#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/andesvel/morfolo.git",
+    "directory": "packages/core"
+  },
+  "bugs": "https://github.com/andesvel/morfolo/issues",
+  "keywords": [
+    "convert",
+    "converter",
+    "ffmpeg",
+    "ffmpeg.wasm",
+    "webassembly",
+    "canvas",
+    "web-worker",
+    "image",
+    "audio",
+    "video",
+    "browser",
+    "client-side"
+  ],
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "@morfolo/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
-  },
-  "devDependencies": {
-    "typescript": "~6.0.3"
+    "build": "rm -rf dist && tsc -p tsconfig.build.json && node scripts/fix-dist.mjs",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm build"
   },
   "dependencies": {
     "@ffmpeg/ffmpeg": "^0.12.15",
     "@ffmpeg/util": "^0.12.2"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.3"
   }
 }

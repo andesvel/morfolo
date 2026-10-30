@@ -37,5 +37,5 @@ jobs:
       - name: Typecheck (core)
         run: pnpm --dir packages/core typecheck
 
-      - name: Build (web, includes tsc -b)
-        run: pnpm --dir apps/web build
+      - name: Build (core dist, then web; web build includes tsc -b)
+        run: pnpm build
