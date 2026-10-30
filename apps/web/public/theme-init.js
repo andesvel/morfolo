@@ -5,7 +5,7 @@
   var state = {};
   try {
     state = (JSON.parse(localStorage.getItem("morfolo:settings") || "{}").state) || {};
-  } catch (error) {}
+  } catch {}
   var theme = state.theme || "system";
   var dark = theme === "dark" || (theme === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
   root.dataset.theme = dark ? "dark" : "light";
