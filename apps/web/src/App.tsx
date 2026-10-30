@@ -4,6 +4,7 @@ import { useHashLocation } from "wouter/use-hash-location";
 import { Footer } from "./components/layout/Footer.tsx";
 import { GridLines } from "./components/layout/GridLines.tsx";
 import { Header } from "./components/layout/Header.tsx";
+import { Toaster } from "./components/ui/sonner.tsx";
 import { TooltipProvider } from "./components/ui/tooltip.tsx";
 import { useLocale } from "./i18n/index.ts";
 import { applyTheme, watchSystemTheme } from "./lib/theme.ts";
@@ -48,6 +49,7 @@ function App() {
             </Switch>
           </main>
           <Footer />
+          <Toaster />
         </div>
       </Router>
     </TooltipProvider>

@@ -111,6 +111,23 @@
     color: var(--color-ink-mute);
   }
 
+  /* Toast icon box per type (sonner sets data-type on the toast). */
+  [data-sonner-toast][data-type="success"] [data-icon] {
+    border-color: var(--color-signal);
+    background: var(--color-signal);
+    color: var(--color-on-signal);
+  }
+
+  [data-sonner-toast][data-type="error"] [data-icon] {
+    border-color: var(--color-error);
+    color: var(--color-error);
+  }
+
+  [data-sonner-toast][data-type="warning"] [data-icon] {
+    border-color: var(--color-warning);
+    color: var(--color-warning);
+  }
+
   /* Wide construction-zone stripes behind the drop zone, in a faint signal tint; hard stops, never a fade. */
   .pattern-hazard {
     background-color: var(--color-bone-soft);

@@ -9,6 +9,7 @@ import { Switch } from "../components/ui/switch.tsx";
 import { Hint } from "../components/ui/tooltip.tsx";
 import { messagesFor, useMessages } from "../i18n/index.ts";
 import { cn } from "../lib/cn.ts";
+import { notify } from "../lib/notify.ts";
 import { GUTTER } from "../lib/grid.ts";
 import { useConversion } from "../stores/conversion.ts";
 import { useEngine } from "../stores/engine.ts";
@@ -175,7 +176,10 @@ export function SettingsView() {
                 variant="secondary"
                 size="sm"
                 disabled={engine.status === "loading" || engine.status === "ready"}
-                onClick={() => void engine.warm()}
+                onClick={async () => {
+                  if (await engine.warm()) notify.engineReady();
+                  else notify.engineFailed(useEngine.getState().error ?? "");
+                }}
               >
                 {engine.status === "ready" ? s.engineStatus.loaded : s.engineStatus.loadNow}
               </Button>
@@ -183,7 +187,10 @@ export function SettingsView() {
                 variant="primary"
                 size="sm"
                 disabled={engine.status === "loading" || running || (!engine.cached && engine.status !== "ready")}
-                onClick={() => void engine.clearCache()}
+                onClick={async () => {
+                  await engine.clearCache();
+                  notify.cacheCleared();
+                }}
               >
                 {s.engineStatus.clearCache}
               </Button>
@@ -225,7 +232,14 @@ export function SettingsView() {
             help={s.reset.help}
             hint={s.reset.hint}
             control={
-              <Button id="reset-settings" variant="primary" onClick={settings.reset}>
+              <Button
+                id="reset-settings"
+                variant="primary"
+                onClick={() => {
+                  settings.reset();
+                  notify.preferencesReset();
+                }}
+              >
                 {s.reset.action}
               </Button>
             }

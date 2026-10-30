@@ -16,6 +16,15 @@ Swiss grid + raw brutalism. Take from Swiss: a visible hairline grid (4 columns 
 - Full height under the sticky header on every screen (`hero-fill`). The display size is bounded by viewport height (`min(13vw, 16svh)`) so text and the scroll cue always fit.
 - Signal accents, all on grid coordinates: a signal block over the last column with the real format counts, 8px signal squares where interior grid lines meet the hero's top edge, and the signal scroll-cue box.
 
+## Notifications
+- sonner, `unstyled` and redrawn: square, 2px ink border, shadow-hard-md, bone surface, mono uppercase title, body description. Bottom-right, 16px from the edges on mobile.
+- Each type has its own icon shape in a square box (check, X, triangle, info, spinner); success fills the box with signal, error and warning tint border and icon. Error also gets an error border on the toast.
+- Fire them through `notify.*` only, so wording stays localized: one summary per run ("3 FILES CONVERTED", with a ZIP action when 2 or more), one error per failed file, unsupported files on add, engine loaded/failed, cache cleared, queue cleared, preferences reset, zip progress.
+
+## Zip
+- `ZIP · N` appears in the queue header only when 2 or more results exist; a single file downloads from its row.
+- Built client-side with fflate (stored, no recompression), duplicate names become "name (2).ext", file name `morfolo-YYYY-MM-DD-HHMM.zip`.
+
 ## Registration marks
 `<RegisterMarks at={[...]} edge>`: 8px signal squares centered where grid lines cross a rule.
 - Header: one on the logo cell's bottom-left corner, centered on the intersection of the first grid line and the rule below the logo (header bottom on md+, logo/nav rule on mobile). It lives in the header, so it stays put on scroll and on every view.

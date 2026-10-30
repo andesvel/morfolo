@@ -25,7 +25,7 @@ morfolo/
 - `apps/web` MUST use Vite + React + TypeScript — NEVER introduce Next.js, Astro, or any other meta-framework
 - Routing: wouter with hash location (`#/`, `#/convert`, `#/settings`). Three views only: landing, convert, settings. No auth, no server routes
 - Shared state: Zustand stores in apps/web/src/stores (conversion queue, settings incl. theme and locale, engine). Local UI state stays in React hooks. NEVER add Redux or another state library
-- Keep dependencies lean: add a package only when a task needs it
+- Keep dependencies lean: add a package only when a task needs it. Notifications use sonner (restyled via `components/ui/sonner.tsx`, always through `lib/notify.ts`); zips use fflate, built in memory with stored entries
 - MUST use pnpm workspaces for the monorepo — NEVER add Turborepo, Nx, or other build orchestrators unless explicitly asked
 - MUST use TypeScript strict mode in both packages
 - MUST NOT use the `any` type

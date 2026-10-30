@@ -2,6 +2,8 @@ import { create } from "zustand";
 import { ConversionError, convert, identify, needsEngine, targetsFor } from "@morfolo/core";
 import { getMessages } from "../i18n/index.ts";
 import { paramsFor } from "../lib/format-options.ts";
+import { notify } from "../lib/notify.ts";
+import { buildZip, zipName } from "../lib/zip.ts";
 import { outputName } from "../lib/format.ts";
 import { useEngine } from "./engine.ts";
 import { formatValues, useSettings } from "./settings.ts";
@@ -16,7 +18,8 @@ export type Job = {
   to: string | undefined;
   status: JobStatus;
   pct: number | null;
-  /** Object URL for the converted Blob, revoked when the job goes away. */
+  /** Converted file, kept for the zip; its object URL is revoked when the job goes away. */
+  result?: Blob;
   url?: string;
   outputName?: string;
   outputSize?: number;
@@ -30,6 +33,9 @@ type ConversionStore = {
   gate: { ids: string[] } | null;
   /** Rows playing their exit animation; removed once it ends. */
   leaving: string[];
+  zipping: boolean;
+  /** Bundles every converted result (2 or more) into one zip download. */
+  downloadZip: () => Promise<void>;
   addFiles: (files: Iterable<File>) => void;
   /** Animates the rows out, then drops them and revokes their results. */
   remove: (id: string) => void;
@@ -85,10 +91,12 @@ export const useConversion = create<ConversionStore>()((set, get) => {
   const pickRunnable = (ids?: readonly string[]) =>
     get().jobs.filter((job) => isRunnable(job) && (!ids || ids.includes(job.id)));
 
-  /** Drains every queued job, one at a time. */
+  /** Drains every queued job, one at a time, then reports the run. */
   const drain = async () => {
     if (get().running) return;
     set({ running: true });
+    let done = 0;
+    let failed = 0;
 
     for (;;) {
       const job = get().jobs.find((item) => item.status === "queued");
@@ -105,7 +113,8 @@ export const useConversion = create<ConversionStore>()((set, get) => {
         const name = outputName(job.file.name, to, nameSuffix);
         if (!get().jobs.some((item) => item.id === id)) continue;
         const url = URL.createObjectURL(result);
-        patch(id, { status: "done", pct: 100, url, outputName: name, outputSize: result.size });
+        patch(id, { status: "done", pct: 100, result, url, outputName: name, outputSize: result.size });
+        done += 1;
         if (autoDownload) download(url, name);
       } catch (caught) {
         const message =
@@ -113,10 +122,13 @@ export const useConversion = create<ConversionStore>()((set, get) => {
             ? caught.message
             : getMessages().errors.conversionFailed;
         patch(id, { status: "error", pct: null, error: message });
+        failed += 1;
+        notify.failed(job.file.name, message);
       }
     }
 
     set({ running: false });
+    if (done > 0) notify.converted(done, failed, () => void get().downloadZip());
     void useEngine.getState().refresh();
   };
 
@@ -147,6 +159,7 @@ export const useConversion = create<ConversionStore>()((set, get) => {
     running: false,
     gate: null,
     leaving: [],
+    zipping: false,
 
     addFiles: (files) => {
       const added: Job[] = [...files].map((file) => {
@@ -164,6 +177,8 @@ export const useConversion = create<ConversionStore>()((set, get) => {
         };
       });
       set((state) => ({ jobs: [...state.jobs, ...added] }));
+      const rejected = added.filter((job) => !job.from).map((job) => job.file.name);
+      if (rejected.length > 0) notify.unsupported(rejected);
     },
 
     remove: (id) => {
@@ -173,14 +188,40 @@ export const useConversion = create<ConversionStore>()((set, get) => {
 
     clear: () => {
       if (get().running) return;
-      dismiss(get().jobs.map((job) => job.id));
+      const ids = get().jobs.map((job) => job.id);
+      if (ids.length === 0) return;
+      dismiss(ids);
+      notify.queueCleared(ids.length);
+    },
+
+    downloadZip: async () => {
+      if (get().zipping) return;
+      const entries = get()
+        .jobs.filter((job) => job.status === "done" && job.result && job.outputName)
+        .map((job) => ({ name: job.outputName ?? "", blob: job.result ?? new Blob() }));
+      if (entries.length < 2) return;
+
+      set({ zipping: true });
+      const work = buildZip(entries);
+      notify.zip(work, entries.length);
+      try {
+        const blob = await work;
+        const url = URL.createObjectURL(blob);
+        download(url, zipName());
+        // Give the browser a moment to start the download before freeing it.
+        window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
+      } catch {
+        // notify.zip already reported it
+      } finally {
+        set({ zipping: false });
+      }
     },
 
     setTarget: (id, to) => {
       const job = get().jobs.find((item) => item.id === id);
       if (!job || job.status === "converting" || job.status === "queued") return;
       revoke(job);
-      patch(id, { to, status: "ready", pct: null, url: undefined, outputSize: undefined, error: undefined });
+      patch(id, { to, status: "ready", pct: null, result: undefined, url: undefined, outputSize: undefined, error: undefined });
     },
 
     setTargetAll: (to) => {
@@ -214,6 +255,7 @@ export const useConversion = create<ConversionStore>()((set, get) => {
       if (!gate) return;
       const ok = await useEngine.getState().warm();
       if (!ok) return; // the modal shows the error and stays open
+      notify.engineReady();
       set({ gate: null });
       start(gate.ids);
     },

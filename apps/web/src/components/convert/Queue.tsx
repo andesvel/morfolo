@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { ArrowDown, ArrowRight, RotateCcw, X } from "lucide-react";
+import { ArrowDown, ArrowRight, FileArchive, RotateCcw, X } from "lucide-react";
 import { cn } from "../../lib/cn.ts";
 import { useMessages } from "../../i18n/index.ts";
 import { formatSpecs } from "../../lib/format-options.ts";
@@ -163,6 +163,28 @@ function QueueRow({ job, index }: { job: Job; index: number }) {
   );
 }
 
+/** Only offered for 2 or more results; a single file downloads on its own row. */
+function ZipButton() {
+  const t = useMessages();
+  const count = useConversion((state) => state.jobs.filter((job) => job.status === "done" && job.result).length);
+  const zipping = useConversion((state) => state.zipping);
+  const downloadZip = useConversion((state) => state.downloadZip);
+  if (count < 2) return null;
+
+  return (
+    <Button
+      variant="signal"
+      size="sm"
+      disabled={zipping}
+      aria-label={t.queue.zipLabel(count)}
+      onClick={() => void downloadZip()}
+      className="reveal"
+    >
+      <FileArchive /> {t.queue.zip(count)}
+    </Button>
+  );
+}
+
 export function Queue() {
   const t = useMessages();
   const jobs = useConversion((state) => state.jobs);
@@ -177,9 +199,10 @@ export function Queue() {
 
   return (
     <div className="border border-ink bg-bone-soft">
-      <p className="label border-b border-ink px-4 py-3 font-bold">
-        {t.queue.title(jobs.length)}
-      </p>
+      <div className="flex min-h-12 items-center justify-between gap-4 border-b border-ink px-4 py-2">
+        <p className="label font-bold">{t.queue.title(jobs.length)}</p>
+        <ZipButton />
+      </div>
       <ul>
         {jobs.map((job, index) => (
           <QueueRow key={job.id} job={job} index={index} />
