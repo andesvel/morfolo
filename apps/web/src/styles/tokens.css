@@ -16,10 +16,12 @@
   --color-signal-deep: #1E27C7;
   /*
    * Faint signal for inert surfaces: disabled buttons and the drop zone
-   * stripes. Mixed in oklch so the blue keeps some chroma instead of graying
-   * out; follows the theme because both inputs do.
+   * stripes. Mixed in oklab, never oklch: the warm grays carry a tiny hue
+   * (~110deg) that Safari interpolates toward, turning the blue teal or green.
+   * In oklab the gray adds lightness and no hue. Follows the theme because
+   * both inputs do.
    */
-  --color-signal-tint: color-mix(in oklch, var(--color-signal) 22%, var(--color-bone-soft));
+  --color-signal-tint: color-mix(in oklab, var(--color-signal) 22%, var(--color-bone-soft));
   /* Text and dashed border on the tint (disabled buttons). */
   --color-on-signal-tint: var(--color-ink-mute);
   /* Drop zone stripes: the tint in light; a calmer variant in dark. */
@@ -77,10 +79,10 @@
    * Light variant for dark: mixed toward the light gray instead of the dark
    * surface, so it reads as a pale blue rather than navy. Text on it turns dark.
    */
-  --color-signal-tint: color-mix(in oklch, var(--color-signal) 45%, var(--color-ink-mute));
+  --color-signal-tint: color-mix(in oklab, var(--color-signal) 45%, var(--color-ink-mute));
   --color-on-signal-tint: var(--color-bone);
   /* The pale tint over a whole drop zone is too loud on dark; keep the stripes mid-tone. */
-  --color-hazard: color-mix(in oklch, var(--color-signal) 40%, var(--color-bone-deep));
+  --color-hazard: color-mix(in oklab, var(--color-signal) 40%, var(--color-bone-deep));
   --color-success: #6FCF8E;
   --color-warning: #E8A64B;
   --color-error: #FF6B6B;

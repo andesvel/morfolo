@@ -38,8 +38,9 @@ export function LandingView() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <section className="relative grid overflow-hidden hero-fill content-end pt-12 pb-24 md:grid-cols-4 md:items-end md:pt-20">
-        {/* Signal block on the grid's last column (half width below md): the format table, counted. */}
+      <section className="relative grid overflow-hidden hero-fill content-end pt-28 pb-24 md:grid-cols-4 md:items-end md:pt-20">
+        {/* Signal block on the grid's last column (half width below md): the format table, counted.
+            Below md it spans the text column, so the hero's top padding clears its h-28. */}
         <Reveal
           i={2}
           className="@container absolute top-0 right-0 left-1/2 z-10 flex h-28 flex-col justify-between bg-signal p-4 text-on-signal sm:p-6 md:left-3/4 md:h-40"
@@ -114,7 +115,7 @@ export function LandingView() {
         </Reveal>
       </section>
 
-      <section ref={details} className={cn(CELLS, "scroll-mt-24 md:grid-cols-4")}>
+      <section ref={details} className={cn(CELLS, "scroll-below-header md:grid-cols-4")}>
         <Reveal i={5} className={cn(CELL, "@container flex flex-col justify-between gap-12 bg-signal p-6 text-on-signal")}>
           <span className="label">{l.privacyLabel}</span>
           <div className="flex flex-col gap-4">

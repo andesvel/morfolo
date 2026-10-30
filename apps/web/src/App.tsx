@@ -41,7 +41,7 @@ function App() {
         <div className="relative isolate flex min-h-svh flex-col bg-bone font-sans text-ink">
           <GridLines />
           <Header />
-          <main className="vt-view flex-1">
+          <main className="flex-1">
             <Switch>
               <Route path="/convert" component={ConvertView} />
               <Route path="/settings" component={SettingsView} />
