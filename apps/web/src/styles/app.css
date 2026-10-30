@@ -74,18 +74,6 @@
     font-size: clamp(3rem, min(13vw, 16svh), 11rem);
   }
 
-  .display-xl {
-    font-size: clamp(2.5rem, 8vw, 6rem);
-  }
-
-  .display-lg {
-    font-size: clamp(2rem, 5vw, 3.5rem);
-  }
-
-  .display-md {
-    font-size: clamp(1.5rem, 3.5vw, 2.5rem);
-  }
-
   /* Hollow ghost type behind headings (Swiss reference) */
   .text-ghost {
     color: transparent;
@@ -152,6 +140,19 @@
  * Display line sized to its cell, so the longest word never overflows:
  * put @container on the cell. ~9 wide glyphs fit at 9cqi.
  */
+/* Display sizes are utilities, so they take variants (md:display-lg). */
+@utility display-xl {
+  font-size: clamp(2.5rem, 8vw, 6rem);
+}
+
+@utility display-lg {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+}
+
+@utility display-md {
+  font-size: clamp(1.5rem, 3.5vw, 2.5rem);
+}
+
 @utility fit-cell {
   font-size: clamp(1rem, 9cqi, 1.875rem);
 }
@@ -167,6 +168,15 @@
 
   @media (width >= 48rem) {
     min-height: calc(100svh - var(--header-h));
+  }
+}
+
+/* Anchor targets clear the sticky header, which is taller below md. */
+@utility scroll-below-header {
+  scroll-margin-top: var(--header-h-sm);
+
+  @media (width >= 48rem) {
+    scroll-margin-top: var(--header-h);
   }
 }
 
@@ -206,9 +216,10 @@
     box-shadow var(--duration-fast) var(--ease-out);
 }
 
-/* Padding and type size that change with state (drop zone going compact). */
+/* Height, padding and type size that change with state (drop zone going compact). */
 @utility ease-size {
   transition:
+    height var(--duration-slow) var(--ease-out),
     padding var(--duration-slow) var(--ease-out),
     font-size var(--duration-slow) var(--ease-out);
 }

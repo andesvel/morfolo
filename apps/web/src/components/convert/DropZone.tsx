@@ -54,14 +54,15 @@ export function DropZone({ onFiles, compact = false }: DropZoneProps) {
         onClick={() => input.current?.click()}
         className={cn(
           "ease-size flex w-full cursor-pointer flex-col items-center justify-center gap-4 px-6 text-center",
-          compact ? "py-10" : "py-20",
+          // Fixed heights, so wrapped text never stretches the zone.
+          compact ? "h-48" : "h-64 md:h-72",
         )}
       >
         {/* Text and icon sit on the zone's own fill so they cut the stripes, like .cut on the page grid. */}
         <span className="bg-bone-soft p-1">
           <Crosshair aria-hidden className="size-8" strokeWidth={1.5} />
         </span>
-        <span className={cn("display ease-size", compact ? "display-md" : "display-lg")}>
+        <span className={cn("display ease-size", compact ? "display-md" : "display-md md:display-lg")}>
           <span className="cut bg-bone-soft">{over ? t.dropzone.over : t.dropzone.idle}</span>
         </span>
         <span className="label">
