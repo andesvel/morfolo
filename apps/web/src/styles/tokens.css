@@ -14,6 +14,20 @@
   --color-rule: color-mix(in oklab, var(--color-ink) 16%, transparent);
   --color-signal: #2F3CFF;
   --color-signal-deep: #1E27C7;
+  /*
+   * Faint signal for inert surfaces: disabled buttons and the drop zone
+   * stripes. Mixed in oklch so the blue keeps some chroma instead of graying
+   * out; follows the theme because both inputs do.
+   */
+  --color-signal-tint: color-mix(in oklch, var(--color-signal) 22%, var(--color-bone-soft));
+  /* Text and dashed border on the tint (disabled buttons). */
+  --color-on-signal-tint: var(--color-ink-mute);
+  /* Drop zone stripes: the tint in light; a calmer variant in dark. */
+  --color-hazard: var(--color-signal-tint);
+  /* Text on a signal fill: always light, in every theme. */
+  --color-on-signal: #E6E7E4;
+  /* Dialog backdrop: always black, dimmed by opacity. */
+  --color-scrim: #000000;
   --color-success: #1F4A2E;
   --color-warning: #8A4A00;
   --color-error: #7A1010;
@@ -30,12 +44,48 @@
   --radius: 0;
 
   --ease-out: cubic-bezier(0.2, 0, 0, 1);
-  --duration-fast: 200ms;
-  --duration-base: 420ms;
-  --duration-slow: 520ms;
-  --stagger: 80ms;
+  --duration-fast: 160ms;
+  --duration-base: 330ms;
+  --duration-slow: 400ms;
+  --stagger: 65ms;
 
   /* Sticky header heights: strip 1.5rem + one 3.5rem bar (md+) or two (below md), plus rules */
   --header-h: calc(5rem + 1px);
   --header-h-sm: calc(8.5rem + 2px);
+}
+
+/*
+ * Dark theme: the same token names with inverted neutrals, so every utility
+ * (bg-bone, text-ink, border-ink, shadow-hard-*) follows without per-component
+ * overrides. data-theme is set before first paint by the inline script in
+ * index.html and kept in sync by lib/theme.ts. Signal is a lighter blue here
+ * so it keeps contrast against the dark surface and under light text.
+ */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-ink: #E6E7E4;
+  --color-ink-soft: #C4C6C1;
+  --color-ink-mute: #9A9D98;
+  --color-bone: #121316;
+  --color-bone-soft: #1A1C1F;
+  --color-bone-deep: #2C2F34;
+  --color-signal: #4855FF;
+  --color-signal-deep: #3440E6;
+  --color-on-signal: #F2F3F0;
+  /*
+   * Light variant for dark: mixed toward the light gray instead of the dark
+   * surface, so it reads as a pale blue rather than navy. Text on it turns dark.
+   */
+  --color-signal-tint: color-mix(in oklch, var(--color-signal) 45%, var(--color-ink-mute));
+  --color-on-signal-tint: var(--color-bone);
+  /* The pale tint over a whole drop zone is too loud on dark; keep the stripes mid-tone. */
+  --color-hazard: color-mix(in oklch, var(--color-signal) 40%, var(--color-bone-deep));
+  --color-success: #6FCF8E;
+  --color-warning: #E8A64B;
+  --color-error: #FF6B6B;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
 }

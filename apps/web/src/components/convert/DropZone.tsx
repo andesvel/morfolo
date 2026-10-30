@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import type { DragEvent } from "react";
 import { Crosshair } from "lucide-react";
 import { cn } from "../../lib/cn.ts";
+import { useMessages } from "../../i18n/index.ts";
 import { ACCEPT } from "../../lib/format.ts";
 
 type DropZoneProps = {
@@ -17,6 +18,7 @@ const CORNERS = [
 ];
 
 export function DropZone({ onFiles, compact = false }: DropZoneProps) {
+  const t = useMessages();
   const input = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
 
@@ -59,11 +61,11 @@ export function DropZone({ onFiles, compact = false }: DropZoneProps) {
         <span className="bg-bone-soft p-1">
           <Crosshair aria-hidden className="size-8" strokeWidth={1.5} />
         </span>
-        <span className={cn("display ease-size", compact ? "display-lg" : "display-xl")}>
-          <span className="cut bg-bone-soft">{over ? "RELEASE TO ADD." : "DROP FILES HERE."}</span>
+        <span className={cn("display ease-size", compact ? "display-md" : "display-lg")}>
+          <span className="cut bg-bone-soft">{over ? t.dropzone.over : t.dropzone.idle}</span>
         </span>
         <span className="label">
-          <span className="cut bg-bone-soft">OR CLICK TO BROWSE · IMAGE · AUDIO · VIDEO</span>
+          <span className="cut bg-bone-soft">{t.dropzone.hint}</span>
         </span>
       </button>
       <input

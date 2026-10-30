@@ -24,7 +24,7 @@ morfolo/
 
 - `apps/web` MUST use Vite + React + TypeScript — NEVER introduce Next.js, Astro, or any other meta-framework
 - Routing: wouter with hash location (`#/`, `#/convert`, `#/settings`). Three views only: landing, convert, settings. No auth, no server routes
-- Shared state: Zustand stores in apps/web/src/stores (conversion queue, settings). Local UI state stays in React hooks. NEVER add Redux or another state library
+- Shared state: Zustand stores in apps/web/src/stores (conversion queue, settings incl. theme and locale, engine). Local UI state stays in React hooks. NEVER add Redux or another state library
 - Keep dependencies lean: add a package only when a task needs it
 - MUST use pnpm workspaces for the monorepo — NEVER add Turborepo, Nx, or other build orchestrators unless explicitly asked
 - MUST use TypeScript strict mode in both packages
@@ -43,10 +43,11 @@ morfolo/
 - Spacing: Tailwind default scale only. NEVER use arbitrary values like p-[13px].
 - Fonts: Archivo Black (display), JetBrains Mono (labels/metadata), system sans stack for body. NEVER add Inter. Self-hosted woff2, latin subset, only the weights used. NEVER load fonts or assets from third-party CDNs (the pinned ffmpeg core is the only documented exception).
 - States (loading, progress, error, success, disabled, selected) MUST NOT rely on color alone: use text labels, inversion, or patterns.
-- Motion: functional and unhurried (200-520ms via the --duration-* tokens, ease-out or linear). Layout changes (rows added/removed, panels opening) animate their height instead of jumping. View changes use the View Transitions API; entering text and elements may fade in from a small blur. NEVER bounce or spring. Everything MUST collapse to instant under prefers-reduced-motion.
+- Motion: functional and unhurried (160-400ms via the --duration-* tokens, ease-out or linear). Layout changes (rows added/removed, panels opening) animate their height instead of jumping. View changes use the View Transitions API; entering text and elements may fade in from a small blur. NEVER bounce or spring. Everything MUST collapse to instant under prefers-reduced-motion.
 - Icons: lucide-react only, square caps and miter joins, used as structural marks (crosshairs, arrows, registration marks, section glyphs). Never as illustrations, never as the only carrier of meaning. Brand marks lucide lacks (the GitHub mark) use the official simple-icons SVG, never a redraw.
 - Anti-slop: NEVER add decorative status dots, fake screenshots, hand-rolled SVG illustrations, or em-dashes in UI copy. The landing view introduces the tool with real data (supported formats, privacy note); no invented features, stats or testimonials.
-- One theme at launch.
+- Two themes, light and dark, plus AUTO (follows the OS). Dark redefines the same tokens under `:root[data-theme="dark"]` in tokens.css; components never branch on theme. Text on a signal fill uses `text-on-signal` (light in both themes), never `text-bone`.
+- i18n: English and Spanish only, typed dictionaries in apps/web/src/i18n (`en.ts` defines the shape, `es.ts` must match it). Every UI string goes through `useMessages()` (or `getMessages()` outside React). No i18n library. File names and ffmpeg error output are never translated.
 
 **Deploy**
 

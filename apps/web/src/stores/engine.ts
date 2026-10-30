@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { clearEngineCache, engineStatus, isEngineCached, warmupEngine } from "@morfolo/core";
 import type { EngineStatus } from "@morfolo/core";
+import { getMessages } from "../i18n/index.ts";
 
 type EngineStore = {
   status: EngineStatus;
@@ -12,8 +13,6 @@ type EngineStore = {
   warm: () => Promise<boolean>;
   clearCache: () => Promise<void>;
 };
-
-export const ENGINE_SIZE_LABEL = "32 MB";
 
 export const useEngine = create<EngineStore>()((set, get) => ({
   status: engineStatus(),
@@ -42,7 +41,7 @@ export const useEngine = create<EngineStore>()((set, get) => ({
       set({
         status: "error",
         pct: null,
-        error: caught instanceof Error ? caught.message : "Failed to load",
+        error: caught instanceof Error ? caught.message : getMessages().errors.engineFailed,
       });
       return false;
     }

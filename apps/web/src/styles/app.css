@@ -64,6 +64,11 @@
     line-height: 0.88;
   }
 
+  /* Spanish capitals carry accents (Á, É, Ú) above cap height: open the leading. */
+  :lang(es) .display {
+    line-height: 0.98;
+  }
+
   /* Bounded by height too: the full-height hero must fit its text and scroll cue. */
   .display-hero {
     font-size: clamp(3rem, min(13vw, 16svh), 11rem);
@@ -75,6 +80,10 @@
 
   .display-lg {
     font-size: clamp(2rem, 5vw, 3.5rem);
+  }
+
+  .display-md {
+    font-size: clamp(1.5rem, 3.5vw, 2.5rem);
   }
 
   /* Hollow ghost type behind headings (Swiss reference) */
@@ -102,12 +111,12 @@
     color: var(--color-ink-mute);
   }
 
-  /* Wide construction-zone stripes behind the drop zone; hard stops, never a fade. */
+  /* Wide construction-zone stripes behind the drop zone, in a faint signal tint; hard stops, never a fade. */
   .pattern-hazard {
     background-color: var(--color-bone-soft);
     background-image: repeating-linear-gradient(
       -45deg,
-      var(--color-bone-deep) 0 16px,
+      var(--color-hazard) 0 16px,
       transparent 16px 32px
     );
   }

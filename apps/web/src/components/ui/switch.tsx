@@ -1,9 +1,11 @@
 import { Switch as SwitchPrimitive } from "radix-ui";
 import type { ComponentProps } from "react";
+import { useMessages } from "../../i18n/index.ts";
 import { cn } from "../../lib/cn.ts";
 
 /** Square toggle that also prints ON/OFF so state never relies on color. */
 export function Switch({ className, ...props }: ComponentProps<typeof SwitchPrimitive.Root>) {
+  const t = useMessages();
   return (
     <SwitchPrimitive.Root
       data-slot="switch"
@@ -13,10 +15,10 @@ export function Switch({ className, ...props }: ComponentProps<typeof SwitchPrim
       )}
       {...props}
     >
-      <SwitchPrimitive.Thumb className="block size-6 bg-ink data-[state=checked]:bg-bone" />
-      <span className="flex-1 text-center font-bold group-data-[state=checked]:-order-1 group-data-[state=checked]:text-bone">
-        <span className="group-data-[state=checked]:hidden">OFF</span>
-        <span className="hidden group-data-[state=checked]:inline">ON</span>
+      <SwitchPrimitive.Thumb className="block size-6 bg-ink data-[state=checked]:bg-on-signal" />
+      <span className="flex-1 text-center font-bold group-data-[state=checked]:-order-1 group-data-[state=checked]:text-on-signal">
+        <span className="group-data-[state=checked]:hidden">{t.common.off}</span>
+        <span className="hidden group-data-[state=checked]:inline">{t.common.on}</span>
       </span>
     </SwitchPrimitive.Root>
   );

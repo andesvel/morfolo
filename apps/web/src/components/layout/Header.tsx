@@ -1,38 +1,46 @@
 import { ArrowUpRight } from "lucide-react";
 import { Link, useLocation } from "wouter";
+import { useMessages } from "../../i18n/index.ts";
 import { cn } from "../../lib/cn.ts";
 import { pad2 } from "../../lib/format.ts";
 import { useConversion } from "../../stores/conversion.ts";
 import { useEngine } from "../../stores/engine.ts";
 import { GithubMark } from "./GithubMark.tsx";
+import { LocaleToggle, ThemeToggle } from "./Preferences.tsx";
 import { RegisterMarks } from "./RegisterMarks.tsx";
 
 const NAV = [
-  { href: "/", label: "INDEX" },
-  { href: "/convert", label: "CONVERT" },
-  { href: "/settings", label: "SETTINGS" },
+  { href: "/", key: "index" },
+  { href: "/convert", key: "convert" },
+  { href: "/settings", key: "settings" },
 ] as const;
 
 function EngineState() {
+  const t = useMessages();
   const { status, pct, cached } = useEngine();
-  if (status === "loading") return <>FFMPEG · LOADING{pct !== null && ` ${Math.round(pct)}%`}</>;
-  if (status === "ready") return <>FFMPEG · READY</>;
-  if (status === "error") return <>FFMPEG · ERROR</>;
-  return <>FFMPEG · {cached ? "CACHED" : "NOT DOWNLOADED"}</>;
+  if (status === "loading") return <>{t.header.engine.loading(pct === null ? null : Math.round(pct))}</>;
+  if (status === "ready") return <>{t.header.engine.ready}</>;
+  if (status === "error") return <>{t.header.engine.error}</>;
+  return <>{cached ? t.header.engine.cached : t.header.engine.missing}</>;
 }
 
 export function Header() {
+  const t = useMessages();
   const [location] = useLocation();
   const queued = useConversion((state) => state.jobs.length);
 
   return (
     <header className="vt-header sticky top-0 z-20 bg-bone">
       <div className="bg-ink text-bone">
-        <div className="label mx-auto flex h-6 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <span>CLIENT-SIDE FILE CONVERTER</span>
-          <span className="max-sm:hidden">
-            <EngineState />
-          </span>
+        <div className="label mx-auto flex h-6 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+          <span className="truncate max-sm:hidden">{t.header.strip}</span>
+          <div className="flex items-center gap-4 max-sm:w-full max-sm:justify-between">
+            <span className="whitespace-nowrap max-md:hidden">
+              <EngineState />
+            </span>
+            <ThemeToggle />
+            <LocaleToggle />
+          </div>
         </div>
       </div>
       <div className="border-b border-ink">
@@ -45,7 +53,7 @@ export function Header() {
             <RegisterMarks at={["0"]} edge="bottom" />
             MORFOLO<span className="text-signal">.</span>
           </Link>
-          <nav aria-label="Views" className="grid grid-cols-3 border-l border-ink md:col-span-2">
+          <nav aria-label={t.header.navLabel} className="grid grid-cols-3 border-l border-ink md:col-span-2">
             {NAV.map((item, index) => {
               const active = location === item.href;
               return (
@@ -59,9 +67,9 @@ export function Header() {
                   )}
                 >
                   <span className="text-ink-mute max-sm:hidden">{pad2(index + 1)}</span>
-                  {item.label}
+                  {t.header.nav[item.key]}
                   {item.href === "/convert" && queued > 0 && (
-                    <span className="bg-signal px-1 text-bone" aria-label={`${queued} files in queue`}>
+                    <span className="bg-signal px-1 text-on-signal" aria-label={t.header.queued(queued)}>
                       {pad2(queued)}
                     </span>
                   )}
@@ -77,7 +85,7 @@ export function Header() {
             target="_blank"
           >
             <GithubMark className="mr-1 size-4" />
-            GITHUB <ArrowUpRight className="size-4" />
+            {t.header.github} <ArrowUpRight className="size-4" />
           </a>
         </div>
       </div>

@@ -49,6 +49,16 @@
   }
 }
 
+/*
+ * The transition overlay would otherwise swallow every click until it ends.
+ * Let pointer events through to the live DOM underneath, so the header (or
+ * anything else) responds immediately; a new navigation just supersedes the
+ * running transition.
+ */
+:root::view-transition {
+  pointer-events: none;
+}
+
 ::view-transition-old(root),
 ::view-transition-new(root),
 ::view-transition-old(site-header),

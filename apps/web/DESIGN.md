@@ -35,12 +35,24 @@ Page text is not selectable (`user-select: none` on body). Inputs and `.selectab
 ## Palette
 - `bone*` tokens are a frosted, muted gray (the color only, never a blur). `ink*` are near-black neutrals. `--signal` is electric blue, the only accent.
 - `--color-rule` is the hairline color for the background grid.
+- `--color-signal-tint` is a faint, slightly saturated signal (oklch mix) and means DISABLED on buttons, always with a dashed border so the state is not color-only; text on it is `--color-on-signal-tint`. Dark uses a lighter mix toward the light gray. `--color-hazard` is the drop zone stripe color (the tint in light, a calmer mid-tone in dark).
+- `--color-on-signal` is the text color on signal fills, light in both themes. `--color-scrim` is the dialog backdrop (black at 70%).
+
+## Themes
+- Light (default tokens) and dark (`:root[data-theme="dark"]`), plus AUTO. The inline script in index.html sets `data-theme` and `lang` before first paint; lib/theme.ts keeps them in sync.
+- Dark inverts the neutrals: bone becomes graphite (#121316 family), ink becomes the light gray. Inverted surfaces (header strip, footer, tooltips, active nav) stay inverted, so they read light on dark.
+- Signal is a lighter blue in dark (#4855FF) to hold contrast on the dark surface and under light text. Error/success/warning get lighter dark values.
+- Toggles: compact AUTO/LIGHT/DARK cycle and EN/ES switch in the header strip; full controls in Settings > Interface.
+
+## Language
+- EN and ES. Display copy is written per locale (the Spanish hero is "ENTRA. / SALE."), not machine-shortened. Spanish display type gets slightly looser leading (`:lang(es) .display`) so accented capitals don't touch the line above.
 
 ## Views
 Hash-routed with wouter: `#/` index (landing), `#/convert`, `#/settings`. Header and footer are shared. Each view opens with a mono kicker ("02 · TOOL"), a display title ending in a period, and a short body paragraph.
 
 ## Motion
-- Tokens: `--duration-fast` 200ms, `--duration-base` 420ms, `--duration-slow` 520ms, `--stagger` 80ms.
+- Tokens: `--duration-fast` 160ms, `--duration-base` 330ms, `--duration-slow` 400ms, `--stagger` 65ms.
+- The view-transition overlay ignores pointer events, so the header stays clickable mid-transition; a new navigation supersedes the running one.
 - View changes: View Transitions API. Header, footer and grid have their own `view-transition-name` and do not animate. The old view leaves in `fast` (fade + blur 6px), the new one enters in `base`. The nav indicator bar slides between items in `slow`.
 - Entry: `.reveal` (or `<Reveal i={n}>`) fades in from blur 10px and 0.75rem below, staggered by `--stagger`.
 - Height changes: `collapse-box` (grid rows 0fr/1fr) grows on mount through @starting-style and collapses with `data-open="false"`. Queue rows play it before the store drops them (`leaving` in the conversion store).
@@ -60,10 +72,11 @@ lucide-react, square caps and miter joins (global rule in app.css). Used as mark
 - Footer: black bar, bone mono text, left = (c) year + license, right = privacy note. Copy MUST be precise: "files stay on your device", NEVER "nothing leaves your device" (the ffmpeg core is fetched from a CDN).
 - Section header: "NN · TITLE" left and "NN / TT" right, both label style, with a 1px ink rule below and generous space before the content.
 - Field: label above (label style, "· OPTIONAL" suffix when needed), input below (square, bone bg, ink border, ~56px tall, 16px text, horizontal padding 16-20px), helper text under it in label style. Short related fields share a row (2-3 columns, 16px gap, 24px between rows). Border 2px per the kit's foundations (the screenshot looks thinner: verify in Figma). Focus: 2px ink outline (proposed). Error: error-colored border plus a text message prefixed "ERROR:" (proposed).
+- Disabled buttons that block a flow explain why: the RUN button is wrapped in a `<Tooltip>` (disabled buttons get no hover) naming what is missing (no files, which files lack a format, running, all done), and the same sentence shows under it for touch.
 - Buttons: primary = signal fill, bone text (solid actions: RESET, CLEAR CACHE, per-row CONVERT); secondary = transparent, 2px ink border, ink text; accent = signal fill, bone text. Square, uppercase. End-of-flow CTA is full width (~72px) and names the action, e.g. "CONVERT — WAV → MP3". Hover = the button lifts up-left by the shadow offset and shadow-hard-sm appears where it was (`ease-press`, --duration-fast); pressed = back to rest with no shadow. Full-bleed buttons (dialog footer, ghost) stay flat.
 - Badge: mono 11px uppercase, square. Three styles: ink fill, signal fill, outline.
 - Selectable option (target format): 1px ink border box, title uppercase bold, mono sub-label, value right-aligned. Selected = signal fill with bone text plus a SELECTED label or bold weight (color never carries the state alone). Same for codec/option chips, active switches (which also print ON) and the nav indicator bar.
 - Panel (file list / queue / result): bone-soft bg, 1px ink border, mono header with "§" prefix, row separators 1px bone-deep. Row = name (truncate with ellipsis, full name in title attr; the kit's own mockup clips a long name), mono meta (SIZE · FORMAT), right-aligned status or percent.
 - Progress (proposed): square box with 2px ink border and ink fill, mono percent on the right, text label "CONVERTING 42%". Indeterminate = striped pattern.
 - Elevation: shadow-hard-sm/md/lg on cards; shadow-hard-signal on the drop zone while dragging over it.
-- Drop zone: `pattern-hazard` (wide bone-deep diagonal stripes on bone-soft). Its icon and texts sit on bone-soft fills so they cut the stripes. Corners ink; signal while dragging.
+- Drop zone: `pattern-hazard` (wide diagonal stripes in `--color-hazard` over bone-soft). Title is `display-lg` (`display-md` when compact). Its icon and texts sit on bone-soft fills so they cut the stripes. Corners ink; signal while dragging.

@@ -22,7 +22,7 @@ export function AccordionTrigger({ className, children, ...props }: ComponentPro
         {...props}
       >
         {children}
-        <span className="flex size-8 shrink-0 items-center justify-center border border-ink group-data-[state=open]:border-signal group-data-[state=open]:bg-signal group-data-[state=open]:text-bone">
+        <span className="flex size-8 shrink-0 items-center justify-center border border-ink group-data-[state=open]:border-signal group-data-[state=open]:bg-signal group-data-[state=open]:text-on-signal">
           <Plus aria-hidden className="size-4 group-data-[state=open]:hidden" />
           <Minus aria-hidden className="hidden size-4 group-data-[state=open]:block" />
         </span>

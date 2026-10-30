@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { ConversionError, convert, identify, needsEngine, targetsFor } from "@morfolo/core";
-import { FORMAT_SPECS } from "../lib/format-options.ts";
+import { getMessages } from "../i18n/index.ts";
+import { paramsFor } from "../lib/format-options.ts";
 import { outputName } from "../lib/format.ts";
 import { useEngine } from "./engine.ts";
 import { formatValues, useSettings } from "./settings.ts";
@@ -42,7 +43,7 @@ type ConversionStore = {
 };
 
 /** Matches --duration-slow, the collapse-box transition. */
-const EXIT_MS = 520;
+const EXIT_MS = 400;
 
 function exitDelay(): number {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : EXIT_MS;
@@ -96,8 +97,7 @@ export const useConversion = create<ConversionStore>()((set, get) => {
 
       patch(id, { status: "converting", pct: null });
       try {
-        const spec = FORMAT_SPECS[to];
-        const params = spec ? spec.toParams(formatValues(to)) : {};
+        const params = paramsFor(to, formatValues(to));
         const result = await convert({ file: job.file, from: job.from, to, params }, (pct) =>
           patch(id, { pct }),
         );
@@ -109,7 +109,9 @@ export const useConversion = create<ConversionStore>()((set, get) => {
         if (autoDownload) download(url, name);
       } catch (caught) {
         const message =
-          caught instanceof ConversionError || caught instanceof Error ? caught.message : "Conversion failed";
+          caught instanceof ConversionError || caught instanceof Error
+            ? caught.message
+            : getMessages().errors.conversionFailed;
         patch(id, { status: "error", pct: null, error: message });
       }
     }
@@ -158,7 +160,7 @@ export const useConversion = create<ConversionStore>()((set, get) => {
           to: undefined,
           status: from ? "ready" : "error",
           pct: null,
-          error: from ? undefined : "Unsupported format",
+          error: from ? undefined : getMessages().errors.unsupported,
         };
       });
       set((state) => ({ jobs: [...state.jobs, ...added] }));

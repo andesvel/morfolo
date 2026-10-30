@@ -1,7 +1,8 @@
 import { useRef, useState } from "react";
 import { ArrowDown, ArrowRight, RotateCcw, X } from "lucide-react";
 import { cn } from "../../lib/cn.ts";
-import { FORMAT_SPECS } from "../../lib/format-options.ts";
+import { useMessages } from "../../i18n/index.ts";
+import { formatSpecs } from "../../lib/format-options.ts";
 import { formatBytes, formatLabel, outputName } from "../../lib/format.ts";
 import { download, jobNeedsEngine, useConversion } from "../../stores/conversion.ts";
 import type { Job } from "../../stores/conversion.ts";
@@ -10,6 +11,7 @@ import { Reveal } from "../motion/Reveal.tsx";
 import { Button } from "../ui/button.tsx";
 
 function Progress({ pct }: { pct: number | null }) {
+  const t = useMessages();
   return (
     <div className="flex w-full items-center gap-3" role="status">
       <div className="h-3 flex-1 border-2 border-ink">
@@ -19,16 +21,17 @@ function Progress({ pct }: { pct: number | null }) {
           <div className="h-full bg-ink" style={{ width: `${pct}%` }} />
         )}
       </div>
-      <span className="label font-bold">{pct === null ? "CONVERTING" : `CONVERTING ${Math.round(pct)}%`}</span>
+      <span className="label font-bold">{t.queue.converting(pct === null ? null : Math.round(pct))}</span>
     </div>
   );
 }
 
 /** What this row will produce: file name plus the active format options. */
 function OutputLine({ job, to }: { job: Job; to: string }) {
+  const t = useMessages();
   const values = useFormatValues(to);
   const suffix = useSettings((state) => state.nameSuffix);
-  const summary = FORMAT_SPECS[to]?.summary(values);
+  const summary = formatSpecs(t.formats)[to]?.summary(values);
   return (
     <p className="label flex min-w-0 items-center gap-2 text-ink-mute">
       <ArrowRight aria-hidden className="size-3 shrink-0" />
@@ -42,6 +45,7 @@ function OutputLine({ job, to }: { job: Job; to: string }) {
 }
 
 function QueueRow({ job, index }: { job: Job; index: number }) {
+  const t = useMessages();
   const setTarget = useConversion((state) => state.setTarget);
   const remove = useConversion((state) => state.remove);
   const requestStart = useConversion((state) => state.requestStart);
@@ -71,11 +75,11 @@ function QueueRow({ job, index }: { job: Job; index: number }) {
                 {job.file.name}
               </p>
               <p className="label flex items-center gap-1 text-ink-mute">
-                {formatBytes(job.file.size)} · {job.from ? formatLabel(job.from) : "UNKNOWN FORMAT"}
+                {formatBytes(job.file.size)} · {job.from ? formatLabel(job.from) : t.queue.unknownFormat}
                 {job.outputSize !== undefined && (
                   <>
                     <ArrowRight aria-hidden className="size-3" />
-                    <span className="sr-only">to</span>
+                    <span className="sr-only">{t.queue.to}</span>
                     {formatBytes(job.outputSize)}
                   </>
                 )}
@@ -86,7 +90,7 @@ function QueueRow({ job, index }: { job: Job; index: number }) {
               {supported ? (
                 <select
                   ref={select}
-                  aria-label={`Output format for ${job.file.name}`}
+                  aria-label={t.queue.outputFor(job.file.name)}
                   aria-invalid={needsFormat && !job.to}
                   value={job.to ?? ""}
                   disabled={busy}
@@ -100,7 +104,7 @@ function QueueRow({ job, index }: { job: Job; index: number }) {
                   )}
                 >
                   <option value="" disabled>
-                    FORMAT
+                    {t.queue.formatPlaceholder}
                   </option>
                   {job.targets.map((to) => (
                     <option key={to} value={to}>
@@ -109,33 +113,33 @@ function QueueRow({ job, index }: { job: Job; index: number }) {
                   ))}
                 </select>
               ) : (
-                <span className="label">NO OUTPUT AVAILABLE</span>
+                <span className="label">{t.queue.noOutput}</span>
               )}
               {needsFormat && !job.to && (
                 <span role="alert" className="label font-bold text-error">
-                  ERROR: PICK A FORMAT FIRST
+                  {t.common.error(t.queue.pickFormat)}
                 </span>
               )}
             </div>
 
             <div className="flex min-w-0 items-center gap-2 md:col-span-4 md:justify-end">
               {job.status === "converting" && <Progress pct={job.pct} />}
-              {job.status === "queued" && <span className="label">QUEUED</span>}
+              {job.status === "queued" && <span className="label">{t.queue.queued}</span>}
               {job.status === "error" && supported && (
                 <span className="selectable label truncate font-bold text-error" title={job.error}>
-                  ERROR: {job.error ?? "FAILED"}
+                  {t.common.error(job.error ?? t.queue.failed)}
                 </span>
               )}
-              {job.status === "error" && !supported && <span className="label font-bold text-error">ERROR: UNSUPPORTED FORMAT</span>}
+              {job.status === "error" && !supported && <span className="label font-bold text-error">{t.common.error(t.queue.unsupported)}</span>}
               {job.status === "done" && job.url && job.outputName && (
                 <Button variant="signal" size="sm" onClick={() => download(job.url ?? "", job.outputName ?? "")}>
-                  <ArrowDown /> DOWNLOAD
+                  <ArrowDown /> {t.queue.download}
                 </Button>
               )}
               {(job.status === "ready" || (job.status === "error" && supported)) && (
                 <Button variant="signal" size="sm" onClick={onConvert}>
                   {job.status === "error" ? <RotateCcw /> : <ArrowRight />}
-                  {job.status === "error" ? "RETRY" : "CONVERT"}
+                  {job.status === "error" ? t.queue.retry : t.queue.convert}
                 </Button>
               )}
             </div>
@@ -145,8 +149,8 @@ function QueueRow({ job, index }: { job: Job; index: number }) {
                 type="button"
                 onClick={() => remove(job.id)}
                 disabled={job.status === "converting"}
-                aria-label={`Remove ${job.file.name}`}
-                className="flex size-9 items-center justify-center border border-ink bg-bone hover:bg-ink hover:text-bone disabled:opacity-30"
+                aria-label={t.queue.remove(job.file.name)}
+                className="flex size-9 items-center justify-center border border-ink bg-bone hover:bg-ink hover:text-bone disabled:border-dashed disabled:border-on-signal-tint disabled:bg-signal-tint disabled:text-on-signal-tint"
               >
                 <X className="size-4" />
               </button>
@@ -160,12 +164,13 @@ function QueueRow({ job, index }: { job: Job; index: number }) {
 }
 
 export function Queue() {
+  const t = useMessages();
   const jobs = useConversion((state) => state.jobs);
 
   if (jobs.length === 0) {
     return (
       <div className="border border-ink bg-bone-soft px-4 py-6">
-        <p className="label text-ink-mute">§ QUEUE EMPTY. ADD FILES ABOVE.</p>
+        <p className="label text-ink-mute">{t.queue.empty}</p>
       </div>
     );
   }
@@ -173,7 +178,7 @@ export function Queue() {
   return (
     <div className="border border-ink bg-bone-soft">
       <p className="label border-b border-ink px-4 py-3 font-bold">
-        § QUEUE · {jobs.length} {jobs.length === 1 ? "FILE" : "FILES"}
+        {t.queue.title(jobs.length)}
       </p>
       <ul>
         {jobs.map((job, index) => (

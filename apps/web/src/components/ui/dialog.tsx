@@ -9,7 +9,7 @@ export function DialogContent({ className, children, ...props }: ComponentProps<
   return (
     <DialogPrimitive.Portal>
       {/* Solid scrim, no blur: the page behind is dimmed, never frosted. */}
-      <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-ink/70" />
+      <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-scrim/70" />
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
