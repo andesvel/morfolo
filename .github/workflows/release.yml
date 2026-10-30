@@ -109,4 +109,9 @@ jobs:
               --title "chore: sync main into dev after release" \
               --body "Automated: brings the release commits (versions, CHANGELOGs) from main back to dev.")
           fi
-          gh pr merge "$url" --auto --merge
+          # Auto-merge is refused while GitHub considers the PR mergeable right
+          # away ("unstable status": no required checks registered yet); merge it
+          # directly then. Never fail the release over the sync PR.
+          gh pr merge "$url" --auto --merge \
+            || gh pr merge "$url" --merge \
+            || echo "::warning::Could not merge $url yet; merge it once its checks pass."
