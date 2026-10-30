@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.1](https://github.com/andesvel/morfolo/compare/web-v0.1.0...web-v0.1.1) (2026-10-30)
+
+
+### Bug Fixes
+
+* **web:** mobile layout, motion and tint glitches ([be26a02](https://github.com/andesvel/morfolo/commit/be26a0230a47994c8b63240e70b5ad0e090eb5ec))
+* **web:** mobile layout, motion and tint glitches ([799e55f](https://github.com/andesvel/morfolo/commit/799e55fc389c3bcd12a439711075c256b65e4870))
+
 ## 0.1.0 (2026-10-30)
 
 
