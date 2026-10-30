@@ -16,6 +16,8 @@ morfolo/
 
 - MUST keep 100% of file processing on the client — NEVER send a user's file to a server, third-party API, or any analytics/logging endpoint
 - `packages/core` MUST stay framework-agnostic — NEVER import React or any UI library there
+- `packages/core` is published to npm as `@morfolo/core` under MPL-2.0 (the rest of the repo is AGPL-3.0). Its public API is everything exported from `src/index.ts`; changing or removing an export is a breaking change (`feat!:`)
+- Core builds with `tsc -p tsconfig.build.json` plus `scripts/fix-dist.mjs` (worker URL and `.d.ts` specifiers). The `@morfolo/source` export condition points at `src/` and is used only by the web dev server and its typecheck; the web production build consumes `dist/`, exactly what ships
 - Canvas adapters MUST run inside our Web Worker. ffmpeg.wasm adapters MUST run on the main thread (FFmpeg spawns its own internal Worker). NEVER import anything from adapters/wasm/ inside worker/.
 - MUST NOT use `localStorage` for file data, ever
 - File data MUST live in memory (`File`/`Blob`) during a conversion — only use IndexedDB or OPFS if a task explicitly requires queueing or chunking large files
@@ -53,6 +55,12 @@ morfolo/
 
 - MUST target Cloudflare Workers with static assets (`@cloudflare/vite-plugin` + `wrangler`)
 - `wrangler.jsonc` MUST set `"not_found_handling": "single-page-application"`
+
+**Branches and releases**
+
+- Flow: `feat/*`, `fix/*`, `ci/*`... → PR to `dev` → PR `dev` → `main`. `main` is production; every push there deploys to `morfolo.andesvel.workers.dev`. Both branches are protected by rulesets (PR required, `ci` must pass, no force push or deletion; `main` accepts merge commits only)
+- Commits MUST follow Conventional Commits (commitlint runs on every PR): `fix` = patch, `feat` = minor, `feat!` or a `BREAKING CHANGE:` footer = major (minor while 0.x). Scope with `core` or `web` when the change is package-specific
+- NEVER bump versions or edit CHANGELOGs by hand: release-please (the `morfolo-release` GitHub App) opens the Release PR on `main`, tags `core-vX.Y.Z` / `web-vX.Y.Z`, publishes `@morfolo/core` to npm with provenance, and syncs `main` back into `dev`
 
 ## Pending (DO NOT proceed—ask before moving forward with this)
 
