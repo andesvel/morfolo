@@ -25,3 +25,11 @@ export function targetsFor(from: string): readonly string[] {
   const targets = targetsBySource.get(canonical);
   return targets ? [...targets].sort() : [];
 }
+
+/** True when from -> to runs on the ffmpeg engine (needs the CDN core). */
+export function needsEngine(from: string, to: string): boolean {
+  const canonical = canonicalize(from) ?? from;
+  return wasmAdapters.some(
+    (adapter) => adapter.from.includes(canonical) && adapter.to.includes(to),
+  );
+}

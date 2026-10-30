@@ -8,6 +8,11 @@ import type { ConvertParams } from "../../types.ts";
 const FFMPEG_CORE_VERSION = "0.12.9";
 const FFMPEG_CORE_BASE_URL = `https://unpkg.com/@ffmpeg/core@${FFMPEG_CORE_VERSION}/dist/esm`;
 
+const ENGINE_CACHE_PREFIX = "morfolo-ffmpeg-";
+const ENGINE_CACHE = `${ENGINE_CACHE_PREFIX}${FFMPEG_CORE_VERSION}`;
+const CORE_JS_URL = `${FFMPEG_CORE_BASE_URL}/ffmpeg-core.js`;
+const CORE_WASM_URL = `${FFMPEG_CORE_BASE_URL}/ffmpeg-core.wasm`;
+
 const ffmpeg = new FFmpeg();
 let loadPromise: Promise<void> | undefined;
 let queue: Promise<unknown> = Promise.resolve();
@@ -39,6 +44,34 @@ function extensionForFile(mime: string): string {
   return ext;
 }
 
+const AUDIO_CODECS = new Set([
+  "libmp3lame",
+  "aac",
+  "alac",
+  "flac",
+  "libvorbis",
+  "libopus",
+  "pcm_s16le",
+  "pcm_s24le",
+  "pcm_f32le",
+]);
+const VIDEO_CODECS = new Set(["libx264", "libx265", "libvpx", "libvpx-vp9", "libtheora"]);
+const X26X_PRESETS = new Set(["ultrafast", "superfast", "veryfast", "faster", "fast", "medium"]);
+
+function num(params: ConvertParams, key: string): number | undefined {
+  const value = params[key];
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function str(params: ConvertParams, key: string, allowed: ReadonlySet<string>): string | undefined {
+  const value = params[key];
+  return typeof value === "string" && allowed.has(value) ? value : undefined;
+}
+
+/**
+ * Maps ConvertParams to ffmpeg flags. Unknown keys and values outside the
+ * allowlists are ignored, so ffmpeg falls back to the container defaults.
+ */
 function flagArgs(to: string, params?: ConvertParams): string[] {
   if (!params) {
     return [];
@@ -46,19 +79,55 @@ function flagArgs(to: string, params?: ConvertParams): string[] {
 
   const args: string[] = [];
   const isVideo = to.startsWith("video/");
-  const bitrateFlag = isVideo ? "-b:v" : "-b:a";
 
-  if (typeof params.bitrateKbps === "number") {
-    args.push(bitrateFlag, `${params.bitrateKbps}k`);
+  const videoCodec = isVideo ? str(params, "videoCodec", VIDEO_CODECS) : undefined;
+  const audioCodec = str(params, "audioCodec", AUDIO_CODECS);
+
+  if (videoCodec) args.push("-c:v", videoCodec);
+
+  if (isVideo) {
+    const bitrate = num(params, "bitrateKbps");
+    const crf = num(params, "crf");
+    const quality = num(params, "videoQuality");
+    const preset = str(params, "preset", X26X_PRESETS);
+
+    if (bitrate !== undefined) args.push("-b:v", `${bitrate}k`);
+    if (crf !== undefined) {
+      args.push("-crf", String(crf));
+      // VP9 needs a zero target bitrate for constant-quality mode.
+      if (videoCodec === "libvpx-vp9" && bitrate === undefined) args.push("-b:v", "0");
+    }
+    if (quality !== undefined) args.push("-q:v", String(quality));
+    if (preset && (videoCodec === "libx264" || videoCodec === "libx265")) {
+      args.push("-preset", preset);
+    }
+    if (videoCodec === "libvpx" || videoCodec === "libvpx-vp9") {
+      const fast = params.vpxSpeed === "fast";
+      args.push("-deadline", fast ? "realtime" : "good", "-cpu-used", fast ? "8" : "4");
+    }
+
+    if (params.dropAudio === true) {
+      args.push("-an");
+      return args;
+    }
   }
 
-  if (isVideo && typeof params.crf === "number") {
-    args.push("-crf", String(params.crf));
-  }
+  if (audioCodec) args.push("-c:a", audioCodec);
 
-  if (typeof params.sampleRate === "number") {
-    args.push("-ar", String(params.sampleRate));
-  }
+  const audioBitrate = num(params, isVideo ? "audioBitrateKbps" : "bitrateKbps");
+  if (audioBitrate !== undefined) args.push("-b:a", `${audioBitrate}k`);
+
+  const audioQuality = num(params, "audioQuality");
+  if (audioQuality !== undefined) args.push("-q:a", String(audioQuality));
+
+  const compression = num(params, "compressionLevel");
+  if (compression !== undefined) args.push("-compression_level", String(compression));
+
+  const sampleRate = num(params, "sampleRate");
+  if (sampleRate !== undefined) args.push("-ar", String(sampleRate));
+
+  const channels = num(params, "channels");
+  if (channels !== undefined) args.push("-ac", String(channels));
 
   return args;
 }
@@ -80,6 +149,7 @@ type DownloadEvent = {
 };
 
 let engine: EngineStatus = "idle";
+ffmpeg.on("log", captureLog);
 let warmupListener: ((pct: number) => void) | undefined;
 
 export function engineStatus(): EngineStatus {
@@ -134,19 +204,78 @@ function createDownloadTracker(
   };
 }
 
+function cacheAvailable(): boolean {
+  return typeof caches !== "undefined";
+}
+
+/** True when both core files are already in this browser's Cache Storage. */
+export async function isEngineCached(): Promise<boolean> {
+  // caches.has first: caches.open would create an empty cache as a side effect.
+  if (!cacheAvailable() || !(await caches.has(ENGINE_CACHE))) return false;
+  const cache = await caches.open(ENGINE_CACHE);
+  const [js, wasm] = await Promise.all([cache.match(CORE_JS_URL), cache.match(CORE_WASM_URL)]);
+  return Boolean(js && wasm);
+}
+
+/**
+ * Deletes every cached ffmpeg core (any version) and unloads the running
+ * engine, so the next audio/video conversion downloads it again.
+ */
+export async function clearEngineCache(): Promise<void> {
+  if (cacheAvailable()) {
+    const names = await caches.keys();
+    await Promise.all(
+      names.filter((name) => name.startsWith(ENGINE_CACHE_PREFIX)).map((name) => caches.delete(name)),
+    );
+  }
+  if (engine === "ready") {
+    ffmpeg.terminate();
+  }
+  if (engine !== "loading") {
+    engine = "idle";
+    loadPromise = undefined;
+  }
+}
+
+/**
+ * Blob URL for a core file: served from Cache Storage when present,
+ * otherwise downloaded once with toBlobURL and stored for next time.
+ */
+async function coreBlobURL(
+  url: string,
+  mime: string,
+  tracker: (event: DownloadEvent) => void,
+): Promise<string> {
+  const cache = cacheAvailable() ? await caches.open(ENGINE_CACHE) : undefined;
+  const hit = await cache?.match(url);
+  if (hit) {
+    const blob = await hit.blob();
+    tracker({ url, total: blob.size, received: blob.size });
+    return URL.createObjectURL(new Blob([blob], { type: mime }));
+  }
+
+  const blobURL = await toBlobURL(url, mime, true, tracker);
+  if (cache) {
+    try {
+      const blob = await (await fetch(blobURL)).blob();
+      await cache.put(url, new Response(blob, { headers: { "Content-Type": mime } }));
+    } catch {
+      // Quota or private mode: the engine still loads, it just won't be cached.
+    }
+  }
+  return blobURL;
+}
+
 async function ensureLoaded(): Promise<void> {
   if (!loadPromise) {
     engine = "loading";
     loadPromise = (async () => {
-      const coreJsUrl = `${FFMPEG_CORE_BASE_URL}/ffmpeg-core.js`;
-      const coreWasmUrl = `${FFMPEG_CORE_BASE_URL}/ffmpeg-core.wasm`;
-      const tracker = createDownloadTracker([coreJsUrl, coreWasmUrl]);
+      const tracker = createDownloadTracker([CORE_JS_URL, CORE_WASM_URL]);
       const [coreURL, wasmURL] = await Promise.all([
-        toBlobURL(coreJsUrl, "text/javascript", true, tracker),
-        toBlobURL(coreWasmUrl, "application/wasm", true, tracker),
+        coreBlobURL(CORE_JS_URL, "text/javascript", tracker),
+        coreBlobURL(CORE_WASM_URL, "application/wasm", tracker),
       ]);
       await ffmpeg.load({ coreURL, wasmURL });
-      ffmpeg.on("log", captureLog);
       engine = "ready";
       warmupListener = undefined;
     })().catch((caught: unknown) => {
