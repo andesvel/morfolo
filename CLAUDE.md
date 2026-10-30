@@ -56,6 +56,12 @@ morfolo/
 - MUST target Cloudflare Workers with static assets (`@cloudflare/vite-plugin` + `wrangler`)
 - `wrangler.jsonc` MUST set `"not_found_handling": "single-page-application"`
 
+**Branches and releases**
+
+- Flow: `feat/*`, `fix/*`, `ci/*`... → PR to `dev` → PR `dev` → `main`. `main` is production; every push there deploys to `morfolo.andesvel.workers.dev`. Both branches are protected by rulesets (PR required, `ci` must pass, no force push or deletion; `main` accepts merge commits only)
+- Commits MUST follow Conventional Commits (commitlint runs on every PR): `fix` = patch, `feat` = minor, `feat!` or a `BREAKING CHANGE:` footer = major (minor while 0.x). Scope with `core` or `web` when the change is package-specific
+- NEVER bump versions or edit CHANGELOGs by hand: release-please (the `morfolo-release` GitHub App) opens the Release PR on `main`, tags `core-vX.Y.Z` / `web-vX.Y.Z`, publishes `@morfolo/core` to npm with provenance, and syncs `main` back into `dev`
+
 ## Pending (DO NOT proceed—ask before moving forward with this)
 
 - Testing: no framework or defined strategy yet
