@@ -45,3 +45,20 @@ describe("convert (canvas, in the worker)", () => {
     expect((error as ConversionError).code).toBe("UNSUPPORTED_FORMAT");
   });
 });
+
+describe("error codes", () => {
+  it("rejects files over the engine limit with INPUT_TOO_LARGE, before loading it", async () => {
+    // Blob.size is a prototype getter: an own property fakes a 3 GiB file without allocating it.
+    const file = new Blob([], { type: "audio/wav" });
+    Object.defineProperty(file, "size", { value: 3 * 1024 ** 3 });
+    const error = await convert({ file, to: "audio/mpeg" }).catch((caught: unknown) => caught);
+    expect((error as ConversionError).code).toBe("INPUT_TOO_LARGE");
+  });
+
+  it("reports an undecodable image as CONVERSION_FAILED", async () => {
+    const error = await convert({ file: new Blob(["not an image"], { type: "image/png" }), to: "image/jpeg" }).catch(
+      (caught: unknown) => caught,
+    );
+    expect((error as ConversionError).code).toBe("CONVERSION_FAILED");
+  });
+});

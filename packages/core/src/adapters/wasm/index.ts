@@ -2,6 +2,7 @@
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { toBlobURL } from "@ffmpeg/util";
 import { canonicalize, extensionFor } from "../../formats.ts";
+import { ConversionError } from "../../types.ts";
 import type { ConversionAdapter } from "../types.ts";
 import type { ConvertParams } from "../../types.ts";
 
@@ -12,6 +13,9 @@ const ENGINE_CACHE_PREFIX = "morfolo-ffmpeg-";
 const ENGINE_CACHE = `${ENGINE_CACHE_PREFIX}${FFMPEG_CORE_VERSION}`;
 const CORE_JS_URL = `${FFMPEG_CORE_BASE_URL}/ffmpeg-core.js`;
 const CORE_WASM_URL = `${FFMPEG_CORE_BASE_URL}/ffmpeg-core.wasm`;
+
+// ffmpeg.wasm keeps the whole input in a 32-bit WebAssembly heap.
+const MAX_INPUT_BYTES = 2 * 1024 ** 3;
 
 const ffmpeg = new FFmpeg();
 let loadPromise: Promise<void> | undefined;
@@ -282,7 +286,10 @@ async function ensureLoaded(): Promise<void> {
       engine = "error";
       loadPromise = undefined;
       warmupListener = undefined;
-      throw caught;
+      const reason = caught instanceof Error ? caught.message : String(caught);
+      throw new ConversionError(`ffmpeg engine failed to load: ${reason}`, "ENGINE_LOAD_FAILED", {
+        cause: caught,
+      });
     });
   }
 
@@ -317,6 +324,7 @@ export const wasmAdapters: readonly ConversionAdapter[] = [
       "video/webm",
       "video/ogg",
     ],
+    maxInputBytes: MAX_INPUT_BYTES,
     load: ensureLoaded,
     convert: async (file, to, params, onProgress) =>
       runExclusive(async () => {

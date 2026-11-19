@@ -1,4 +1,4 @@
-import type { ConvertParams } from "../types.ts";
+import type { ConversionErrorCode, ConvertParams } from "../types.ts";
 
 export type WorkerRequest = {
   id: string;
@@ -20,7 +20,7 @@ export type WorkerFailure = {
   type: "error";
   error: {
     message: string;
-    code: string;
+    code: ConversionErrorCode;
   };
 };
 

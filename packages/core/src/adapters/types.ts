@@ -11,6 +11,8 @@ export type ConversionAdapter = {
   readonly kind: AdapterKind;
   readonly from: readonly string[];
   readonly to: readonly string[];
+  /** Largest input in bytes; larger files fail with INPUT_TOO_LARGE before loading anything. */
+  readonly maxInputBytes?: number;
   load?(): Promise<void>;
   convert(
     file: Blob,

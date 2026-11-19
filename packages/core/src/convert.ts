@@ -25,6 +25,13 @@ export async function convert(
   const from = sourceFormat(input.file, input.from);
   const adapter = findAdapter(from, input.to);
 
+  if (adapter?.maxInputBytes !== undefined && input.file.size > adapter.maxInputBytes) {
+    throw new ConversionError(
+      `Input is ${input.file.size} bytes; this engine holds at most ${adapter.maxInputBytes}`,
+      "INPUT_TOO_LARGE",
+    );
+  }
+
   if (adapter) {
     try {
       await adapter.load?.();

@@ -59,7 +59,18 @@ Typed per-format parameters are planned before 1.0.
 
 ### Errors
 
-Failures reject with a `ConversionError`, which carries a `code` (`"UNSUPPORTED_FORMAT"`, `"UNKNOWN_SOURCE"`, `"CONVERSION_FAILED"`) and, for ffmpeg, the tail of its log.
+Failures reject with a `ConversionError`. Match on its `code` (typed as `ConversionErrorCode`), not on the message:
+
+| Code | When |
+|---|---|
+| `UNKNOWN_SOURCE` | The file has no type and no `from` was given |
+| `UNSUPPORTED_FORMAT` | No adapter converts this pair |
+| `INPUT_TOO_LARGE` | The file is over the engine's limit (2 GiB for ffmpeg), checked before downloading anything |
+| `ENGINE_LOAD_FAILED` | The ffmpeg core could not be downloaded or started |
+| `WORKER_FAILED` | The conversion worker crashed |
+| `CONVERSION_FAILED` | The conversion ran and failed; for ffmpeg the message carries the tail of its log |
+
+Errors that wrap another keep it as `cause`.
 
 ## Bundler notes
 
