@@ -28,6 +28,18 @@ const webp = await convert(
 
 `convert` returns a `Blob`. It picks the adapter by source and target type: Canvas for images, ffmpeg.wasm for audio and video.
 
+### Cancelling
+
+Pass an `AbortSignal`; the promise rejects with a `ConversionError` whose code is `ABORTED`.
+
+```ts
+const controller = new AbortController();
+const pending = convert({ file, to: "audio/mpeg", signal: controller.signal });
+controller.abort();
+```
+
+ffmpeg can't pause a running job, so aborting one terminates the engine; the next audio or video conversion reloads it from Cache Storage (a second or two, no download). A job still queued behind another is just dropped. Image conversions are short: the worker finishes and its result is discarded.
+
 ### The ffmpeg engine
 
 Audio and video need the ffmpeg core (about 32 MB). It is fetched at runtime from unpkg, pinned to an exact version, and stored in Cache Storage after the first download.
@@ -79,6 +91,7 @@ Failures reject with a `ConversionError`. Match on its `code` (typed as `Convers
 | `INPUT_TOO_LARGE` | The file is over the engine's limit (2 GiB for ffmpeg), checked before downloading anything |
 | `ENGINE_LOAD_FAILED` | The ffmpeg core could not be downloaded or started |
 | `WORKER_FAILED` | The conversion worker crashed |
+| `ABORTED` | The input's `signal` was aborted |
 | `CONVERSION_FAILED` | The conversion ran and failed; for ffmpeg the message carries the tail of its log |
 
 Errors that wrap another keep it as `cause`.

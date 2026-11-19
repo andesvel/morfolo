@@ -51,6 +51,30 @@ describe("ffmpeg engine", { timeout: 120_000 }, () => {
     expect(out.size).toBeGreaterThan(0);
   });
 
+  it("kills a running job on abort, then reloads for the next one", async () => {
+    // ffmpeg reports audio progress only at the end, so abort on a timer.
+    // Two minutes of audio take well over the delay to encode.
+    const controller = new AbortController();
+    const running = convert({ file: wavFixture(120, 44_100), to: "audio/mpeg", signal: controller.signal });
+    setTimeout(() => controller.abort(), 150);
+    const error = await running.catch((caught: unknown) => caught);
+    expect((error as ConversionError).code).toBe("ABORTED");
+    expect(engineStatus()).toBe("idle");
+
+    const next = await convert({ file: wavFixture(), to: "audio/ogg" });
+    expect(next.size).toBeGreaterThan(0);
+    expect(engineStatus()).toBe("ready");
+  });
+
+  it("drops a queued job on abort without touching the one running", async () => {
+    const controller = new AbortController();
+    const first = convert({ file: wavFixture(5, 44_100), to: "audio/mpeg" });
+    const queued = convert({ file: wavFixture(), to: "audio/mpeg", signal: controller.signal });
+    controller.abort();
+    expect(((await queued.catch((caught: unknown) => caught)) as ConversionError).code).toBe("ABORTED");
+    expect((await first).size).toBeGreaterThan(0);
+  });
+
   it("clears the cache and unloads", async () => {
     await clearEngineCache();
     expect(engineStatus()).toBe("idle");

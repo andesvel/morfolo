@@ -19,5 +19,6 @@ export type ConversionAdapter = {
     to: string,
     params?: ConvertParams,
     onProgress?: (pct: number) => void,
+    signal?: AbortSignal,
   ): Promise<Blob>;
 };

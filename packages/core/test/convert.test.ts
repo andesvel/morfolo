@@ -62,3 +62,23 @@ describe("error codes", () => {
     expect((error as ConversionError).code).toBe("CONVERSION_FAILED");
   });
 });
+
+describe("cancellation (canvas)", () => {
+  it("rejects with ABORTED when the signal is already aborted", async () => {
+    const error = await convert({ file: await pngFixture(), to: "image/webp", signal: AbortSignal.abort() }).catch(
+      (caught: unknown) => caught,
+    );
+    expect((error as ConversionError).code).toBe("ABORTED");
+  });
+
+  it("rejects with ABORTED when aborted mid-flight, and the worker keeps serving", async () => {
+    const controller = new AbortController();
+    const running = convert({ file: await pngFixture(), to: "image/webp", signal: controller.signal });
+    controller.abort();
+    const error = await running.catch((caught: unknown) => caught);
+    expect((error as ConversionError).code).toBe("ABORTED");
+
+    const next = await convert({ file: await pngFixture(), to: "image/jpeg" });
+    expect(next.type).toBe("image/jpeg");
+  });
+});

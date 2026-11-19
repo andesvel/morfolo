@@ -13,6 +13,21 @@ export function sourceFormat(file: Blob, from: string | undefined): string {
   throw new ConversionError("Source format is unknown", "UNKNOWN_SOURCE");
 }
 
+export function abortError(signal: AbortSignal): ConversionError {
+  return new ConversionError("Conversion aborted", "ABORTED", { cause: signal.reason });
+}
+
+/** Settles with the promise, or rejects with ABORTED as soon as the signal fires. */
+export function untilAborted<T>(promise: Promise<T>, signal: AbortSignal | undefined): Promise<T> {
+  if (!signal) return promise;
+  if (signal.aborted) return Promise.reject(abortError(signal));
+  return new Promise<T>((resolve, reject) => {
+    const onAbort = () => reject(abortError(signal));
+    signal.addEventListener("abort", onAbort, { once: true });
+    promise.then(resolve, reject).finally(() => signal.removeEventListener("abort", onAbort));
+  });
+}
+
 export function toConversionError(caught: unknown): ConversionError {
   if (caught instanceof ConversionError) {
     return caught;

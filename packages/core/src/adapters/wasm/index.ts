@@ -1,6 +1,7 @@
 // Runs on the main thread. Must never be imported from worker/.
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { canonicalize, extensionFor } from "../../formats.ts";
+import { abortError } from "../../shared.ts";
 import { ConversionError } from "../../types.ts";
 import type { ConversionAdapter } from "../types.ts";
 import type { ConvertParams } from "../../types.ts";
@@ -387,8 +388,10 @@ export const wasmAdapters: readonly ConversionAdapter[] = [
     ],
     maxInputBytes: MAX_INPUT_BYTES,
     load: ensureLoaded,
-    convert: async (file, to, params, onProgress) =>
+    convert: async (file, to, params, onProgress, signal) =>
       runExclusive(async () => {
+        // Aborted while queued behind another job: never touch the engine.
+        if (signal?.aborted) throw abortError(signal);
         await ensureLoaded();
         logTail.length = 0;
 
@@ -404,7 +407,14 @@ export const wasmAdapters: readonly ConversionAdapter[] = [
           }
         };
 
+        // ffmpeg can't stop a running exec: kill the core. The next job reloads it from cache.
+        const kill = () => {
+          ffmpeg.terminate();
+          engine = "idle";
+          loadPromise = undefined;
+        };
         ffmpeg.on("progress", reportProgress);
+        signal?.addEventListener("abort", kill, { once: true });
 
         try {
           await ffmpeg.writeFile(
@@ -436,7 +446,11 @@ export const wasmAdapters: readonly ConversionAdapter[] = [
           }
 
           return new Blob([data as Uint8Array<ArrayBuffer>], { type: to });
+        } catch (caught) {
+          if (signal?.aborted) throw abortError(signal);
+          throw caught;
         } finally {
+          signal?.removeEventListener("abort", kill);
           ffmpeg.off("progress", reportProgress);
           void cleanup(inputPath);
           void cleanup(outputPath);

@@ -7,6 +7,8 @@ export type ConvertInput = {
   to: string;
   from?: string;
   params?: ConvertParams;
+  /** Aborting rejects with ABORTED; a running ffmpeg job is killed and the engine reloads (from cache) on next use. */
+  signal?: AbortSignal;
 };
 
 /**
@@ -17,6 +19,7 @@ export type ConvertInput = {
  * - INPUT_TOO_LARGE: the file exceeds what the engine can hold in memory.
  * - ENGINE_LOAD_FAILED: the ffmpeg core could not be downloaded or started.
  * - WORKER_FAILED: the conversion worker crashed.
+ * - ABORTED: the input's signal was aborted.
  * - CONVERSION_FAILED: the adapter ran and failed (ffmpeg's log tail is in the message).
  */
 export type ConversionErrorCode =
@@ -25,6 +28,7 @@ export type ConversionErrorCode =
   | "INPUT_TOO_LARGE"
   | "ENGINE_LOAD_FAILED"
   | "WORKER_FAILED"
+  | "ABORTED"
   | "CONVERSION_FAILED";
 
 export class ConversionError extends Error {
