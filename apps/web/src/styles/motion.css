@@ -11,16 +11,49 @@
   }
 }
 
+/*
+ * A surface moves without ever going translucent (the grid would show
+ * through): it rises while a clip uncovers it top to bottom.
+ */
+@keyframes reveal-surface {
+  from {
+    clip-path: inset(0 0 100% 0);
+    translate: 0 0.75rem;
+  }
+  /* Explicit end: inset() can't interpolate to the underlying none, it would flip halfway. */
+  to {
+    clip-path: inset(0);
+  }
+}
+
+/* Content on a surface: the surface already moves, so it only fades in from a blur. */
+@keyframes reveal-content {
+  from {
+    opacity: 0;
+    filter: blur(10px);
+  }
+}
+
 @layer utilities {
   /*
-   * Surfaces keep their fill and reveal their children instead. A .cut child
-   * is a fill too: its own children (the text) reveal inside it.
+   * Surfaces reveal as a whole (reveal-surface) and their children fade in
+   * on top. A .cut child is a fill too: its own children (the text) fade.
    */
   .reveal,
+  .reveal-surface,
   .reveal-surface > :not(.cut),
   .reveal-surface > .cut > * {
     animation: reveal var(--duration-base) var(--ease-out) backwards;
     animation-delay: calc(var(--i, 0) * var(--stagger));
+  }
+
+  .reveal-surface {
+    animation-name: reveal-surface;
+  }
+
+  .reveal-surface > :not(.cut),
+  .reveal-surface > .cut > * {
+    animation-name: reveal-content;
   }
 }
 
@@ -87,6 +120,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .reveal,
+  .reveal-surface,
   .reveal-surface > *,
   .reveal-surface > .cut > *,
   .scroll-cue {
