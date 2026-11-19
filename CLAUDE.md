@@ -32,7 +32,7 @@ morfolo/
 - MUST use TypeScript strict mode in both packages
 - MUST NOT use the `any` type
 - MUST NOT bundle ffmpeg-core.wasm as a static asset (Workers limit: 25 MiB per file). Load it at runtime with toBlobURL from a CDN, with an exact pinned version kept in a single constant.
-- Only @ffmpeg/ffmpeg and @ffmpeg/util are dependencies. NEVER add @ffmpeg/core or @ffmpeg/core-mt.
+- @ffmpeg/ffmpeg is the only ffmpeg dependency. NEVER add @ffmpeg/core or @ffmpeg/core-mt. Core files are downloaded by our own `download()` in adapters/wasm (not @ffmpeg/util's toBlobURL, which breaks on compressing CDNs)
 
 **Design**
 
@@ -62,6 +62,9 @@ morfolo/
 - Commits MUST follow Conventional Commits (commitlint runs on every PR): `fix` = patch, `feat` = minor, `feat!` or a `BREAKING CHANGE:` footer = major (minor while 0.x). Scope with `core` or `web` when the change is package-specific
 - NEVER bump versions or edit CHANGELOGs by hand: release-please (the `morfolo-release` GitHub App) opens the Release PR on `main`, tags `core-vX.Y.Z` / `web-vX.Y.Z`, publishes `@morfolo/core` to npm with provenance, and syncs `main` back into `dev`
 
-## Pending (DO NOT proceed—ask before moving forward with this)
+**Testing**
 
-- Testing: no framework or defined strategy yet
+- `packages/core`: Vitest in browser mode (Playwright, headless Chromium), tests in `packages/core/test/`. They run in a real browser because the engine needs Workers, OffscreenCanvas, Cache Storage and WebAssembly; NEVER swap in jsdom or happy-dom
+- Every `feat`/`fix` in core ships with tests; CI runs them on every PR. Generate fixtures in the test (canvas, synthesized audio) instead of committing binaries
+- Tests that load ffmpeg download the pinned core from the CDN; keep them few and in their own file
+- `apps/web` has no tests yet: ask before adding them

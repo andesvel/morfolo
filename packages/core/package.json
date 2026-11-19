@@ -46,13 +46,16 @@
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.build.json && node scripts/fix-dist.mjs",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "pnpm build"
+    "prepublishOnly": "pnpm build",
+    "test": "vitest run"
   },
   "dependencies": {
-    "@ffmpeg/ffmpeg": "^0.12.15",
-    "@ffmpeg/util": "^0.12.2"
+    "@ffmpeg/ffmpeg": "^0.12.15"
   },
   "devDependencies": {
-    "typescript": "~6.0.3"
+    "@vitest/browser-playwright": "5.1.0",
+    "playwright": "1.65.0",
+    "typescript": "~6.0.3",
+    "vitest": "5.1.0"
   }
 }
