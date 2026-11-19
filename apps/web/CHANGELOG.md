@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.2](https://github.com/andesvel/morfolo/compare/web-v0.1.1...web-v0.1.2) (2026-11-19)
+
+
+### Bug Fixes
+
+* **web:** give surfaces their entrance motion back ([81d8af0](https://github.com/andesvel/morfolo/commit/81d8af017bfae133b52e8c61f932567a47584539))
+* **web:** keep the grid behind views during transitions and reveals ([88aa193](https://github.com/andesvel/morfolo/commit/88aa193f89c4d19c1ea1dd8a337a31362955a532))
+* **web:** keep the grid behind views during transitions and reveals ([d6cff3c](https://github.com/andesvel/morfolo/commit/d6cff3c9b0fc795f4fdbedc86cd237306a9a0035))
+* **web:** swap views without crossfading page snapshots ([1a79565](https://github.com/andesvel/morfolo/commit/1a7956556e253fae2ece51da87bdf5c0f3bbe948))
+
 ## [0.1.1](https://github.com/andesvel/morfolo/compare/web-v0.1.0...web-v0.1.1) (2026-10-30)
 
 

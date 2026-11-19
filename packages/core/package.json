@@ -1,6 +1,6 @@
 {
   "name": "@morfolo/core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Client-side file conversion for the browser: images via Canvas in a Web Worker, audio and video via ffmpeg.wasm. Files never leave the device.",
   "license": "MPL-2.0",
   "author": "Andres Estrada (https://github.com/andesvel)",
