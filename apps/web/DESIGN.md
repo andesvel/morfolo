@@ -62,8 +62,9 @@ Hash-routed with wouter: `#/` index (landing), `#/convert`, `#/settings`. Header
 ## Motion
 - Tokens: `--duration-fast` 160ms, `--duration-base` 330ms, `--duration-slow` 400ms, `--stagger` 65ms.
 - The view-transition overlay ignores pointer events, so the header stays clickable mid-transition; a new navigation supersedes the running one.
-- View changes: View Transitions API. Header, footer and grid have their own `view-transition-name` and do not animate. The old view leaves in `fast` (fade + blur 6px), the new one enters in `base`. The nav indicator bar slides between items in `slow`.
+- View changes: View Transitions API, but only the nav indicator has a `view-transition-name` (it slides between items in `slow`). The page swaps at once and the entries below carry the motion. Never crossfade page snapshots or name the grid, header or footer: both views' grids would show, and named groups stack old and new images with plus-lighter (darker lines above the view).
 - Entry: `.reveal` (or `<Reveal i={n}>`) fades in from blur 10px and 0.75rem below, staggered by `--stagger`.
+- Surfaces (anything with its own fill over the grid: cells, signal blocks, drop zone, `.cut` text) use `<Reveal surface>`: the fill never goes translucent, so the grid can't show through. It rises 0.75rem while a clip uncovers it top to bottom (`--ease-out`), and its children fade in from blur on top.
 - Height changes: `collapse-box` (grid rows 0fr/1fr) grows on mount through @starting-style and collapses with `data-open="false"`. Queue rows play it before the store drops them (`leaving` in the conversion store).
 - Blur exists only inside these animations. `prefers-reduced-motion` makes everything instant.
 

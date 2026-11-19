@@ -11,46 +11,63 @@
   }
 }
 
+/*
+ * A surface moves without ever going translucent (the grid would show
+ * through): it rises while a clip uncovers it top to bottom.
+ */
+@keyframes reveal-surface {
+  from {
+    clip-path: inset(0 0 100% 0);
+    translate: 0 0.75rem;
+  }
+  /* Explicit end: inset() can't interpolate to the underlying none, it would flip halfway. */
+  to {
+    clip-path: inset(0);
+  }
+}
+
+/* Content on a surface: the surface already moves, so it only fades in from a blur. */
+@keyframes reveal-content {
+  from {
+    opacity: 0;
+    filter: blur(10px);
+  }
+}
+
 @layer utilities {
-  .reveal {
+  /*
+   * Surfaces reveal as a whole (reveal-surface) and their children fade in
+   * on top. A .cut child is a fill too: its own children (the text) fade.
+   */
+  .reveal,
+  .reveal-surface,
+  .reveal-surface > :not(.cut),
+  .reveal-surface > .cut > * {
     animation: reveal var(--duration-base) var(--ease-out) backwards;
     animation-delay: calc(var(--i, 0) * var(--stagger));
+  }
+
+  .reveal-surface {
+    animation-name: reveal-surface;
+  }
+
+  .reveal-surface > :not(.cut),
+  .reveal-surface > .cut > * {
+    animation-name: reveal-content;
   }
 }
 
 /*
- * View transitions: chrome stays put, only the view swaps. The view swaps as
- * part of root (a viewport-sized snapshot): naming <main> made WebKit place its
- * snapshot by its ink overflow, so views slid sideways and jumped at the end.
+ * View transitions only morph the nav indicator. The page itself swaps at
+ * once: the old snapshot is hidden and the new one is the live page, whose
+ * Reveal entrances carry the motion. Crossfading two page snapshots showed
+ * both views' grids at once (old lines over new text surfaces), and any
+ * element named here stacks its old and new images with plus-lighter, which
+ * doubled the grid lines' alpha (darker lines) while they sat above the view.
+ * So nothing but the indicator gets a name.
  */
-.vt-header {
-  view-transition-name: site-header;
-}
-
-.vt-footer {
-  view-transition-name: site-footer;
-}
-
-.vt-grid {
-  view-transition-name: site-grid;
-}
-
 .vt-nav-indicator {
   view-transition-name: nav-indicator;
-}
-
-@keyframes view-out {
-  to {
-    opacity: 0;
-    filter: blur(6px);
-  }
-}
-
-@keyframes view-in {
-  from {
-    opacity: 0;
-    filter: blur(6px);
-  }
 }
 
 /*
@@ -63,21 +80,12 @@
   pointer-events: none;
 }
 
-::view-transition-old(site-header),
-::view-transition-new(site-header),
-::view-transition-old(site-footer),
-::view-transition-new(site-footer),
-::view-transition-old(site-grid),
-::view-transition-new(site-grid) {
-  animation: none;
-}
-
 ::view-transition-old(root) {
-  animation: view-out var(--duration-fast) linear both;
+  display: none;
 }
 
 ::view-transition-new(root) {
-  animation: view-in var(--duration-base) var(--ease-out) both;
+  animation: none;
 }
 
 ::view-transition-group(nav-indicator) {
@@ -112,6 +120,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .reveal,
+  .reveal-surface,
+  .reveal-surface > *,
+  .reveal-surface > .cut > *,
   .scroll-cue {
     animation: none;
   }

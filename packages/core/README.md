@@ -28,6 +28,18 @@ const webp = await convert(
 
 `convert` returns a `Blob`. It picks the adapter by source and target type: Canvas for images, ffmpeg.wasm for audio and video.
 
+### Cancelling
+
+Pass an `AbortSignal`; the promise rejects with a `ConversionError` whose code is `ABORTED`.
+
+```ts
+const controller = new AbortController();
+const pending = convert({ file, to: "audio/mpeg", signal: controller.signal });
+controller.abort();
+```
+
+ffmpeg can't pause a running job, so aborting one terminates the engine; the next audio or video conversion reloads it from Cache Storage (a second or two, no download). A job still queued behind another is just dropped. Image conversions are short: the worker finishes and its result is discarded.
+
 ### The ffmpeg engine
 
 Audio and video need the ffmpeg core (about 32 MB). It is fetched at runtime from unpkg, pinned to an exact version, and stored in Cache Storage after the first download.
@@ -42,7 +54,18 @@ await warmupEngine((pct) => console.log(pct)); // optional: load ahead of the fi
 await clearEngineCache(); // delete the cached core and unload it
 ```
 
-If your site sets a Content Security Policy, allow `connect-src https://unpkg.com`, `script-src blob: 'wasm-unsafe-eval'` and `worker-src blob:`.
+To serve the core yourself (or pin another version), configure it before the first load:
+
+```ts
+import { configureEngine } from "@morfolo/core";
+
+// A directory with @ffmpeg/core's dist/esm files: ffmpeg-core.js and ffmpeg-core.wasm.
+configureEngine({ version: "0.12.9", baseURL: "/vendor/ffmpeg-core" });
+```
+
+It throws once the engine is loading or loaded; `configureEngine({})` restores the defaults. Each version gets its own cache, keyed by file URL.
+
+If your site sets a Content Security Policy, allow the core's origin in `connect-src` (`https://unpkg.com` by default, nothing extra when self-hosted), plus `script-src blob: 'wasm-unsafe-eval'` and `worker-src blob:`.
 
 ### Parameters
 
@@ -59,7 +82,19 @@ Typed per-format parameters are planned before 1.0.
 
 ### Errors
 
-Failures reject with a `ConversionError`, which carries a `code` (`"UNSUPPORTED_FORMAT"`, `"UNKNOWN_SOURCE"`, `"CONVERSION_FAILED"`) and, for ffmpeg, the tail of its log.
+Failures reject with a `ConversionError`. Match on its `code` (typed as `ConversionErrorCode`), not on the message:
+
+| Code | When |
+|---|---|
+| `UNKNOWN_SOURCE` | The file has no type and no `from` was given |
+| `UNSUPPORTED_FORMAT` | No adapter converts this pair |
+| `INPUT_TOO_LARGE` | The file is over the engine's limit (2 GiB for ffmpeg), checked before downloading anything |
+| `ENGINE_LOAD_FAILED` | The ffmpeg core could not be downloaded or started |
+| `WORKER_FAILED` | The conversion worker crashed |
+| `ABORTED` | The input's `signal` was aborted |
+| `CONVERSION_FAILED` | The conversion ran and failed; for ffmpeg the message carries the tail of its log |
+
+Errors that wrap another keep it as `cause`.
 
 ## Bundler notes
 
@@ -68,7 +103,7 @@ Failures reject with a `ConversionError`, which carries a `code` (`"UNSUPPORTED_
 
   ```ts
   // vite.config.ts
-  export default { optimizeDeps: { exclude: ["@ffmpeg/ffmpeg", "@ffmpeg/util"] } };
+  export default { optimizeDeps: { exclude: ["@ffmpeg/ffmpeg"] } };
   ```
 
 ## Supported formats

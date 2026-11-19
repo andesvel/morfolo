@@ -68,7 +68,7 @@ function QueueRow({ job, index }: { job: Job; index: number }) {
     <li className="collapse-box border-b border-bone-deep last:border-b-0" data-open={!leaving} inert={leaving}>
       {/* Padding lives below the collapsing child so the row can shrink to zero. */}
       <div>
-        <Reveal i={index} className={cn("flex flex-col gap-3 px-4 py-4", job.status === "done" && "bg-bone")}>
+        <Reveal i={index} surface className={cn("flex flex-col gap-3 px-4 py-4", job.status === "done" && "bg-bone")}>
           <div className="grid grid-cols-1 items-center gap-3 md:grid-cols-12">
             <div className="min-w-0 md:col-span-4">
               <p className="selectable truncate text-sm font-bold" title={job.file.name}>

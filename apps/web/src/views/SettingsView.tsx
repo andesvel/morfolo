@@ -78,8 +78,10 @@ export function SettingsView() {
           {s.title}
           <span className="text-signal">.</span>
         </Reveal>
-        <Reveal as="p" i={1} className="mt-6 max-w-md text-base leading-relaxed text-ink-soft">
-          <span className="cut">{s.intro}</span>
+        <Reveal as="p" i={1} surface className="mt-6 max-w-md text-base leading-relaxed text-ink-soft">
+          <span className="cut">
+            <span>{s.intro}</span>
+          </span>
         </Reveal>
       </div>
 
@@ -155,8 +157,12 @@ export function SettingsView() {
 
       <section className="flex flex-col gap-2">
         <SectionHeader index={3} total={4} title={s.sections.engine.title} help={s.sections.engine.help} />
-        <Reveal i={4} className="flex flex-col">
-          <div className="mt-6 flex flex-col gap-4 border border-ink bg-bone-soft p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col">
+          <Reveal
+            i={4}
+            surface
+            className="mt-6 flex flex-col gap-4 border border-ink bg-bone-soft p-4 sm:flex-row sm:items-center sm:justify-between"
+          >
             <div className="flex flex-col gap-2">
               <StatusLine icon={<Cpu aria-hidden className="size-4" />}>
                 {s.engineStatus.label}: {s.engineStatus[engine.status]}
@@ -195,21 +201,23 @@ export function SettingsView() {
                 {s.engineStatus.clearCache}
               </Button>
             </div>
-          </div>
-          <Row
-            id="preload-engine"
-            title={s.preload.title}
-            help={s.preload.help}
-            hint={s.preload.hint}
-            control={
-              <Switch
-                aria-label={s.preload.title}
-                checked={settings.preloadEngine}
-                onCheckedChange={(checked) => settings.set({ preloadEngine: checked })}
-              />
-            }
-          />
-        </Reveal>
+          </Reveal>
+          <Reveal i={4}>
+            <Row
+              id="preload-engine"
+              title={s.preload.title}
+              help={s.preload.help}
+              hint={s.preload.hint}
+              control={
+                <Switch
+                  aria-label={s.preload.title}
+                  checked={settings.preloadEngine}
+                  onCheckedChange={(checked) => settings.set({ preloadEngine: checked })}
+                />
+              }
+            />
+          </Reveal>
+        </div>
       </section>
 
       <section className="flex flex-col gap-2">

@@ -1,6 +1,6 @@
 import { wasmAdapters } from "./adapters/wasm/index.ts";
 import { findAdapter, registerAdapter } from "./registry.ts";
-import { sourceFormat, toConversionError } from "./shared.ts";
+import { abortError, sourceFormat, toConversionError, untilAborted } from "./shared.ts";
 import { ConversionError } from "./types.ts";
 import type { ConvertInput } from "./types.ts";
 import type { WorkerRequest, WorkerResponse } from "./worker/protocol.ts";
@@ -22,18 +22,24 @@ export async function convert(
   input: ConvertInput,
   onProgress?: (pct: number) => void,
 ): Promise<Blob> {
+  const { signal } = input;
+  if (signal?.aborted) throw abortError(signal);
   const from = sourceFormat(input.file, input.from);
   const adapter = findAdapter(from, input.to);
 
+  if (adapter?.maxInputBytes !== undefined && input.file.size > adapter.maxInputBytes) {
+    throw new ConversionError(
+      `Input is ${input.file.size} bytes; this engine holds at most ${adapter.maxInputBytes}`,
+      "INPUT_TOO_LARGE",
+    );
+  }
+
   if (adapter) {
     try {
-      await adapter.load?.();
-      return await adapter.convert(
-        input.file,
-        input.to,
-        input.params,
-        onProgress,
-      );
+      // The load is shared: aborting stops waiting for it, not the download.
+      await untilAborted(adapter.load?.() ?? Promise.resolve(), signal);
+      // Also rejects at once when the job is still queued behind another one.
+      return await untilAborted(adapter.convert(input.file, input.to, input.params, onProgress, signal), signal);
     } catch (caught) {
       throw toConversionError(caught);
     }
@@ -57,10 +63,14 @@ function requestWorkerConversion(
     params: input.params,
   };
 
-  return new Promise((resolve, reject) => {
+  // On abort the job is forgotten: the worker finishes the image, and its reply is dropped.
+  const result = new Promise<Blob>((resolve, reject) => {
     pending.set(id, { resolve, reject, onProgress });
     getWorker().postMessage(request);
   });
+  const { signal } = input;
+  signal?.addEventListener("abort", () => pending.delete(id), { once: true });
+  return untilAborted(result, signal);
 }
 
 function getWorker(): Worker {
