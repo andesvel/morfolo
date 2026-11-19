@@ -87,8 +87,10 @@ export function ConvertView() {
           {t.convert.title}
           <span className="text-signal">.</span>
         </Reveal>
-        <Reveal as="p" i={1} className="mt-6 max-w-md text-base leading-relaxed text-ink-soft">
-          <span className="cut">{t.convert.intro}</span>
+        <Reveal as="p" i={1} surface className="mt-6 max-w-md text-base leading-relaxed text-ink-soft">
+          <span className="cut">
+            <span>{t.convert.intro}</span>
+          </span>
         </Reveal>
       </div>
 
@@ -99,9 +101,7 @@ export function ConvertView() {
           title={t.convert.sections.input.title}
           help={t.convert.sections.input.help}
         />
-        <Reveal i={2}>
-          <DropZone onFiles={addFiles} compact={jobs.length > 0} />
-        </Reveal>
+        <DropZone onFiles={addFiles} compact={jobs.length > 0} reveal={2} />
       </section>
 
       <section className="flex flex-col gap-8">
@@ -125,7 +125,12 @@ export function ConvertView() {
                 {chooser.map((to, index) => {
                   const selected = allSame && targetsInUse[0] === to;
                   return (
-                    <Reveal key={to} i={index} className={CELL}>
+                    <Reveal
+                      key={to}
+                      i={index}
+                      surface
+                      className={cn(CELL, selected ? "bg-signal text-on-signal" : "bg-bone")}
+                    >
                       <button
                         type="button"
                         role="radio"
@@ -133,7 +138,7 @@ export function ConvertView() {
                         onClick={() => setTargetAll(to)}
                         className={cn(
                           "flex h-20 w-full flex-col justify-between p-3 text-left focus-visible:-outline-offset-4",
-                          selected ? "bg-signal text-on-signal" : "bg-bone hover:bg-bone-soft",
+                          !selected && "hover:bg-bone-soft",
                         )}
                       >
                         <span className="label">{selected ? t.convert.selected : t.convert.allTo}</span>

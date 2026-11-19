@@ -43,6 +43,7 @@ export function LandingView() {
             Below md it spans the text column, so the hero's top padding clears its h-28. */}
         <Reveal
           i={2}
+          surface
           className="@container absolute top-0 right-0 left-1/2 z-10 flex h-28 flex-col justify-between bg-signal p-4 text-on-signal sm:p-6 md:left-3/4 md:h-40"
         >
           <span className="label flex items-center justify-between">
@@ -75,13 +76,15 @@ export function LandingView() {
           ))}
         </h1>
         <div className={cn("relative flex flex-col justify-end gap-6 pt-12 md:pt-0", GUTTER)}>
-          <Reveal as="p" i={2} className="text-base leading-relaxed text-ink-soft">
-            <span className="cut">{l.intro}</span>
+          <Reveal as="p" i={2} surface className="text-base leading-relaxed text-ink-soft">
+            <span className="cut">
+            <span>{l.intro}</span>
+          </span>
           </Reveal>
-          <Reveal i={3}>
+          <Reveal i={3} surface className="bg-bone">
             <Link
               href="/convert"
-              className="flex items-center justify-between border-b-2 border-ink bg-bone pb-2 font-bold uppercase hover:text-signal"
+              className="flex items-center justify-between border-b-2 border-ink pb-2 font-bold uppercase hover:text-signal"
             >
               {l.start}
               <ArrowUpRight className="size-5" />
@@ -116,7 +119,7 @@ export function LandingView() {
       </section>
 
       <section ref={details} className={cn(CELLS, "scroll-below-header md:grid-cols-4")}>
-        <Reveal i={5} className={cn(CELL, "@container flex flex-col justify-between gap-12 bg-signal p-6 text-on-signal")}>
+        <Reveal i={5} surface className={cn(CELL, "@container flex flex-col justify-between gap-12 bg-signal p-6 text-on-signal")}>
           <span className="label">{l.privacyLabel}</span>
           <div className="flex flex-col gap-4">
             <p className="fit-cell font-display leading-none uppercase">{l.privacyTitle}</p>
@@ -124,7 +127,7 @@ export function LandingView() {
           </div>
         </Reveal>
         {CAPABILITIES.map(({ kind, inputs, outputs }, index) => (
-          <Reveal key={kind} i={6 + index} className={cn(CELL, "flex flex-col justify-between gap-10 bg-bone p-6")}>
+          <Reveal key={kind} i={6 + index} surface className={cn(CELL, "flex flex-col justify-between gap-10 bg-bone p-6")}>
             <div className="flex items-center justify-between">
               <span className="label font-bold">{l.kinds[kind]}</span>
               <Crosshair aria-hidden className="size-4" strokeWidth={1.5} />
@@ -162,7 +165,7 @@ export function LandingView() {
         </div>
         <ol className={cn(CELLS, "sm:grid-cols-3 md:col-span-3")}>
           {l.steps.map((step, index) => (
-            <Reveal as="li" key={step.title} i={index + 1} className={cn(CELL, "flex flex-col gap-6 bg-bone p-6")}>
+            <Reveal as="li" key={step.title} i={index + 1} surface className={cn(CELL, "flex flex-col gap-6 bg-bone p-6")}>
               <span className="label">{l.step(pad2(index + 1))}</span>
               <span className="font-display text-2xl uppercase">
                 {step.title}
@@ -181,7 +184,7 @@ export function LandingView() {
             <span className="text-signal">.</span>
           </Reveal>
         </div>
-        <Reveal i={1} className="relative border border-ink bg-bone md:col-span-3">
+        <Reveal i={1} surface className="relative border border-ink bg-bone md:col-span-3">
           <Accordion type="single" collapsible>
             {l.faq.map((item) => (
               <AccordionItem key={item.q} value={item.q} className="last:border-b-0">
@@ -194,9 +197,7 @@ export function LandingView() {
       </section>
 
       <section className="pb-16">
-        <Reveal>
-          <DropZone onFiles={onFiles} compact />
-        </Reveal>
+        <DropZone onFiles={onFiles} compact />
       </section>
     </div>
   );

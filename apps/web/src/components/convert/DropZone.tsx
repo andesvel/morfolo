@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import type { DragEvent } from "react";
+import type { CSSProperties, DragEvent } from "react";
 import { Crosshair } from "lucide-react";
 import { cn } from "../../lib/cn.ts";
 import { useMessages } from "../../i18n/index.ts";
@@ -8,6 +8,8 @@ import { ACCEPT } from "../../lib/format.ts";
 type DropZoneProps = {
   onFiles: (files: File[]) => void;
   compact?: boolean;
+  /** Stagger position of its reveal. The striped fill stays put; the contents reveal. */
+  reveal?: number;
 };
 
 const CORNERS = [
@@ -17,7 +19,7 @@ const CORNERS = [
   "bottom-0 right-0 border-b-4 border-r-4",
 ];
 
-export function DropZone({ onFiles, compact = false }: DropZoneProps) {
+export function DropZone({ onFiles, compact = false, reveal = 0 }: DropZoneProps) {
   const t = useMessages();
   const input = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
@@ -37,8 +39,9 @@ export function DropZone({ onFiles, compact = false }: DropZoneProps) {
       }}
       onDragLeave={() => setOver(false)}
       onDrop={onDrop}
+      style={{ "--i": reveal } as CSSProperties}
       className={cn(
-        "pattern-hazard relative border border-ink",
+        "reveal-surface pattern-hazard relative border border-ink",
         over && "shadow-hard-signal",
       )}
     >

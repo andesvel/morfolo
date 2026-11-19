@@ -12,14 +12,22 @@
 }
 
 @layer utilities {
-  .reveal {
+  /*
+   * Surfaces keep their fill and reveal their children instead. A .cut child
+   * is a fill too: its own children (the text) reveal inside it.
+   */
+  .reveal,
+  .reveal-surface > :not(.cut),
+  .reveal-surface > .cut > * {
     animation: reveal var(--duration-base) var(--ease-out) backwards;
     animation-delay: calc(var(--i, 0) * var(--stagger));
   }
 }
 
 /*
- * View transitions: chrome stays put, only the view swaps. The view swaps as
+ * View transitions: chrome stays put, only the view swaps. The grid is not
+ * named on purpose: named groups paint above the root snapshot, so a named
+ * grid would cover the view until the transition ends. The view swaps as
  * part of root (a viewport-sized snapshot): naming <main> made WebKit place its
  * snapshot by its ink overflow, so views slid sideways and jumped at the end.
  */
@@ -29,10 +37,6 @@
 
 .vt-footer {
   view-transition-name: site-footer;
-}
-
-.vt-grid {
-  view-transition-name: site-grid;
 }
 
 .vt-nav-indicator {
@@ -66,9 +70,7 @@
 ::view-transition-old(site-header),
 ::view-transition-new(site-header),
 ::view-transition-old(site-footer),
-::view-transition-new(site-footer),
-::view-transition-old(site-grid),
-::view-transition-new(site-grid) {
+::view-transition-new(site-footer) {
   animation: none;
 }
 
@@ -112,6 +114,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .reveal,
+  .reveal-surface > *,
+  .reveal-surface > .cut > *,
   .scroll-cue {
     animation: none;
   }
