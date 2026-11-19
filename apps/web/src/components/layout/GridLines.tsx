@@ -7,7 +7,7 @@ import { Plus } from "lucide-react";
  */
 export function GridLines() {
   return (
-    <div aria-hidden className="vt-grid pointer-events-none fixed inset-0 -z-10">
+    <div aria-hidden className="pointer-events-none fixed inset-0 -z-10">
       <div className="mx-auto grid h-full max-w-6xl grid-cols-4">
         {[0, 1, 2, 3].map((column) => (
           <div key={column} className="relative border-l border-rule last:border-r">

@@ -4,7 +4,7 @@ import { useMessages } from "../../i18n/index.ts";
 export function Footer() {
   const t = useMessages();
   return (
-    <footer className="vt-footer bg-ink text-bone">
+    <footer className="bg-ink text-bone">
       <div className="relative mx-auto grid max-w-6xl after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-px after:bg-ink-mute sm:grid-cols-4">
         <a
           href="https://github.com/andesvel"

@@ -30,7 +30,7 @@ export function Header() {
   const queued = useConversion((state) => state.jobs.length);
 
   return (
-    <header className="vt-header sticky top-0 z-20 bg-bone">
+    <header className="sticky top-0 z-20 bg-bone">
       <div className="bg-ink text-bone">
         <div className="label mx-auto flex h-6 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
           <span className="truncate max-sm:hidden">{t.header.strip}</span>
