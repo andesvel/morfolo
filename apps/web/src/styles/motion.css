@@ -25,36 +25,16 @@
 }
 
 /*
- * View transitions: chrome stays put, only the view swaps. The grid is not
- * named on purpose: named groups paint above the root snapshot, so a named
- * grid would cover the view until the transition ends. The view swaps as
- * part of root (a viewport-sized snapshot): naming <main> made WebKit place its
- * snapshot by its ink overflow, so views slid sideways and jumped at the end.
+ * View transitions only morph the nav indicator. The page itself swaps at
+ * once: the old snapshot is hidden and the new one is the live page, whose
+ * Reveal entrances carry the motion. Crossfading two page snapshots showed
+ * both views' grids at once (old lines over new text surfaces), and any
+ * element named here stacks its old and new images with plus-lighter, which
+ * doubled the grid lines' alpha (darker lines) while they sat above the view.
+ * So nothing but the indicator gets a name.
  */
-.vt-header {
-  view-transition-name: site-header;
-}
-
-.vt-footer {
-  view-transition-name: site-footer;
-}
-
 .vt-nav-indicator {
   view-transition-name: nav-indicator;
-}
-
-@keyframes view-out {
-  to {
-    opacity: 0;
-    filter: blur(6px);
-  }
-}
-
-@keyframes view-in {
-  from {
-    opacity: 0;
-    filter: blur(6px);
-  }
 }
 
 /*
@@ -67,19 +47,12 @@
   pointer-events: none;
 }
 
-::view-transition-old(site-header),
-::view-transition-new(site-header),
-::view-transition-old(site-footer),
-::view-transition-new(site-footer) {
-  animation: none;
-}
-
 ::view-transition-old(root) {
-  animation: view-out var(--duration-fast) linear both;
+  display: none;
 }
 
 ::view-transition-new(root) {
-  animation: view-in var(--duration-base) var(--ease-out) both;
+  animation: none;
 }
 
 ::view-transition-group(nav-indicator) {
