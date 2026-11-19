@@ -50,8 +50,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@ffmpeg/ffmpeg": "^0.12.15",
-    "@ffmpeg/util": "^0.12.2"
+    "@ffmpeg/ffmpeg": "^0.12.15"
   },
   "devDependencies": {
     "@vitest/browser-playwright": "5.1.0",

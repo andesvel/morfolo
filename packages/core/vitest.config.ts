@@ -4,7 +4,7 @@ import { defineConfig } from "vitest/config";
 // Tests run in a real browser: the engine needs Workers, OffscreenCanvas,
 // Cache Storage and WebAssembly, none of which a DOM emulation provides.
 export default defineConfig({
-  optimizeDeps: { exclude: ["@ffmpeg/ffmpeg", "@ffmpeg/util"] },
+  optimizeDeps: { exclude: ["@ffmpeg/ffmpeg"] },
   test: {
     include: ["test/**/*.test.ts"],
     browser: {

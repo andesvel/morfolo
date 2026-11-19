@@ -32,7 +32,7 @@ morfolo/
 - MUST use TypeScript strict mode in both packages
 - MUST NOT use the `any` type
 - MUST NOT bundle ffmpeg-core.wasm as a static asset (Workers limit: 25 MiB per file). Load it at runtime with toBlobURL from a CDN, with an exact pinned version kept in a single constant.
-- Only @ffmpeg/ffmpeg and @ffmpeg/util are dependencies. NEVER add @ffmpeg/core or @ffmpeg/core-mt.
+- @ffmpeg/ffmpeg is the only ffmpeg dependency. NEVER add @ffmpeg/core or @ffmpeg/core-mt. Core files are downloaded by our own `download()` in adapters/wasm (not @ffmpeg/util's toBlobURL, which breaks on compressing CDNs)
 
 **Design**
 

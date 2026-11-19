@@ -79,7 +79,7 @@ Errors that wrap another keep it as `cause`.
 
   ```ts
   // vite.config.ts
-  export default { optimizeDeps: { exclude: ["@ffmpeg/ffmpeg", "@ffmpeg/util"] } };
+  export default { optimizeDeps: { exclude: ["@ffmpeg/ffmpeg"] } };
   ```
 
 ## Supported formats

@@ -1,6 +1,5 @@
 // Runs on the main thread. Must never be imported from worker/.
 import { FFmpeg } from "@ffmpeg/ffmpeg";
-import { toBlobURL } from "@ffmpeg/util";
 import { canonicalize, extensionFor } from "../../formats.ts";
 import { ConversionError } from "../../types.ts";
 import type { ConversionAdapter } from "../types.ts";
@@ -242,8 +241,37 @@ export async function clearEngineCache(): Promise<void> {
 }
 
 /**
+ * Downloads a core file, reporting bytes as they arrive. Content-Length only
+ * counts as the total when the body is not compressed: a compressing CDN
+ * (jsDelivr, most self-hosted origins) sends the compressed length, which
+ * never matches the decoded bytes. @ffmpeg/util's toBlobURL fails on exactly
+ * that, so the engine downloads on its own.
+ */
+async function download(url: string, mime: string, tracker: (event: DownloadEvent) => void): Promise<Blob> {
+  const response = await fetch(url);
+  if (!response.ok || !response.body) {
+    throw new Error(`HTTP ${response.status} for ${url}`);
+  }
+  const length = Number(response.headers.get("Content-Length"));
+  const total = response.headers.has("Content-Encoding") || !length ? -1 : length;
+
+  const chunks: Uint8Array<ArrayBuffer>[] = [];
+  let received = 0;
+  const reader = response.body.getReader();
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    received += value.byteLength;
+    tracker({ url, total, received });
+  }
+  tracker({ url, total: received, received });
+  return new Blob(chunks, { type: mime });
+}
+
+/**
  * Blob URL for a core file: served from Cache Storage when present,
- * otherwise downloaded once with toBlobURL and stored for next time.
+ * otherwise downloaded once and stored for next time.
  */
 async function coreBlobURL(
   url: string,
@@ -258,16 +286,15 @@ async function coreBlobURL(
     return URL.createObjectURL(new Blob([blob], { type: mime }));
   }
 
-  const blobURL = await toBlobURL(url, mime, true, tracker);
+  const blob = await download(url, mime, tracker);
   if (cache) {
     try {
-      const blob = await (await fetch(blobURL)).blob();
       await cache.put(url, new Response(blob, { headers: { "Content-Type": mime } }));
     } catch {
       // Quota or private mode: the engine still loads, it just won't be cached.
     }
   }
-  return blobURL;
+  return URL.createObjectURL(blob);
 }
 
 async function ensureLoaded(): Promise<void> {
