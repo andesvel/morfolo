@@ -62,6 +62,9 @@ morfolo/
 - Commits MUST follow Conventional Commits (commitlint runs on every PR): `fix` = patch, `feat` = minor, `feat!` or a `BREAKING CHANGE:` footer = major (minor while 0.x). Scope with `core` or `web` when the change is package-specific
 - NEVER bump versions or edit CHANGELOGs by hand: release-please (the `morfolo-release` GitHub App) opens the Release PR on `main`, tags `core-vX.Y.Z` / `web-vX.Y.Z`, publishes `@morfolo/core` to npm with provenance, and syncs `main` back into `dev`
 
-## Pending (DO NOT proceed—ask before moving forward with this)
+**Testing**
 
-- Testing: no framework or defined strategy yet
+- `packages/core`: Vitest in browser mode (Playwright, headless Chromium), tests in `packages/core/test/`. They run in a real browser because the engine needs Workers, OffscreenCanvas, Cache Storage and WebAssembly; NEVER swap in jsdom or happy-dom
+- Every `feat`/`fix` in core ships with tests; CI runs them on every PR. Generate fixtures in the test (canvas, synthesized audio) instead of committing binaries
+- Tests that load ffmpeg download the pinned core from the CDN; keep them few and in their own file
+- `apps/web` has no tests yet: ask before adding them

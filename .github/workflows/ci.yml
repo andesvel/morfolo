@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Lint, typecheck and build. There is no test suite yet (see CLAUDE.md, Pending).
+  # Lint, typecheck, core tests in a real browser, and build.
   ci:
     runs-on: ubuntu-latest
     steps:
@@ -36,6 +36,12 @@ jobs:
 
       - name: Typecheck (core)
         run: pnpm --dir packages/core typecheck
+
+      - name: Install Chromium for the core tests
+        run: pnpm --dir packages/core exec playwright install --with-deps chromium-headless-shell
+
+      - name: Test (core, Vitest browser mode)
+        run: pnpm --dir packages/core test
 
       - name: Build (core dist, then web; web build includes tsc -b)
         run: pnpm build
