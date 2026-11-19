@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.2.0](https://github.com/andesvel/morfolo/compare/core-v0.1.0...core-v0.2.0) (2026-11-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* **core:** ConversionError.code and the constructor's code parameter are typed as ConversionErrorCode instead of string.
+
+### Features
+
+* **core:** cancel conversions with an AbortSignal ([3c61d20](https://github.com/andesvel/morfolo/commit/3c61d204b2d495361b13dccfc35796b020f50554))
+* **core:** configure the ffmpeg core's version and origin ([5101993](https://github.com/andesvel/morfolo/commit/510199348f13c61ec5d7e90eb6ec218629fbd2e5))
+* **core:** type ConversionError codes and add INPUT_TOO_LARGE, ENGINE_LOAD_FAILED ([fb8bf4e](https://github.com/andesvel/morfolo/commit/fb8bf4e70537df0b55966587a6df2740fdc058aa))
+
+
+### Bug Fixes
+
+* **core:** download the ffmpeg core without @ffmpeg/util's toBlobURL ([a39f5a5](https://github.com/andesvel/morfolo/commit/a39f5a59fe0b26d772bf0b00b402f750084cda86))
+
 ## 0.1.0 (2026-10-30)
 
 
