@@ -5,13 +5,33 @@ import { ConversionError } from "../../types.ts";
 import type { ConversionAdapter } from "../types.ts";
 import type { ConvertParams } from "../../types.ts";
 
+// The one pinned core version; configureEngine can override it per app.
 const FFMPEG_CORE_VERSION = "0.12.9";
-const FFMPEG_CORE_BASE_URL = `https://unpkg.com/@ffmpeg/core@${FFMPEG_CORE_VERSION}/dist/esm`;
-
 const ENGINE_CACHE_PREFIX = "morfolo-ffmpeg-";
-const ENGINE_CACHE = `${ENGINE_CACHE_PREFIX}${FFMPEG_CORE_VERSION}`;
-const CORE_JS_URL = `${FFMPEG_CORE_BASE_URL}/ffmpeg-core.js`;
-const CORE_WASM_URL = `${FFMPEG_CORE_BASE_URL}/ffmpeg-core.wasm`;
+
+export type EngineConfig = {
+  /** @ffmpeg/core version. Defaults to the version this release was tested with. */
+  version?: string;
+  /**
+   * Directory serving ffmpeg-core.js and ffmpeg-core.wasm (the package's
+   * dist/esm), e.g. on your own origin. Defaults to unpkg for `version`.
+   */
+  baseURL?: string;
+};
+
+type EngineFiles = { js: string; wasm: string; cache: string };
+
+function resolveFiles({ version = FFMPEG_CORE_VERSION, baseURL }: EngineConfig): EngineFiles {
+  const base = (baseURL ?? `https://unpkg.com/@ffmpeg/core@${version}/dist/esm`).replace(/\/+$/, "");
+  return {
+    js: `${base}/ffmpeg-core.js`,
+    wasm: `${base}/ffmpeg-core.wasm`,
+    // Entries are keyed by full URL, so two origins of one version never mix.
+    cache: `${ENGINE_CACHE_PREFIX}${version}`,
+  };
+}
+
+let files = resolveFiles({});
 
 // ffmpeg.wasm keeps the whole input in a 32-bit WebAssembly heap.
 const MAX_INPUT_BYTES = 2 * 1024 ** 3;
@@ -160,6 +180,19 @@ export function engineStatus(): EngineStatus {
 }
 
 /**
+ * Points the engine at another core version or origin (self-hosting keeps
+ * unpkg out of your CSP). Call it before the engine loads; while it is
+ * loading or loaded this throws, since the running core can't be swapped.
+ * configureEngine({}) restores the defaults.
+ */
+export function configureEngine(config: EngineConfig): void {
+  if (engine === "loading" || engine === "ready") {
+    throw new Error("configureEngine must run before the ffmpeg engine loads");
+  }
+  files = resolveFiles(config);
+}
+
+/**
  * Warms up the ffmpeg engine ahead of the first conversion.
  * onProgress receives 0..100 (byte-weighted across both core files),
  * or -1 while any download size is unknown (missing Content-Length).
@@ -214,9 +247,10 @@ function cacheAvailable(): boolean {
 /** True when both core files are already in this browser's Cache Storage. */
 export async function isEngineCached(): Promise<boolean> {
   // caches.has first: caches.open would create an empty cache as a side effect.
-  if (!cacheAvailable() || !(await caches.has(ENGINE_CACHE))) return false;
-  const cache = await caches.open(ENGINE_CACHE);
-  const [js, wasm] = await Promise.all([cache.match(CORE_JS_URL), cache.match(CORE_WASM_URL)]);
+  const { cache: name, js: jsURL, wasm: wasmURL } = files;
+  if (!cacheAvailable() || !(await caches.has(name))) return false;
+  const cache = await caches.open(name);
+  const [js, wasm] = await Promise.all([cache.match(jsURL), cache.match(wasmURL)]);
   return Boolean(js && wasm);
 }
 
@@ -278,7 +312,7 @@ async function coreBlobURL(
   mime: string,
   tracker: (event: DownloadEvent) => void,
 ): Promise<string> {
-  const cache = cacheAvailable() ? await caches.open(ENGINE_CACHE) : undefined;
+  const cache = cacheAvailable() ? await caches.open(files.cache) : undefined;
   const hit = await cache?.match(url);
   if (hit) {
     const blob = await hit.blob();
@@ -301,10 +335,10 @@ async function ensureLoaded(): Promise<void> {
   if (!loadPromise) {
     engine = "loading";
     loadPromise = (async () => {
-      const tracker = createDownloadTracker([CORE_JS_URL, CORE_WASM_URL]);
+      const tracker = createDownloadTracker([files.js, files.wasm]);
       const [coreURL, wasmURL] = await Promise.all([
-        coreBlobURL(CORE_JS_URL, "text/javascript", tracker),
-        coreBlobURL(CORE_WASM_URL, "application/wasm", tracker),
+        coreBlobURL(files.js, "text/javascript", tracker),
+        coreBlobURL(files.wasm, "application/wasm", tracker),
       ]);
       await ffmpeg.load({ coreURL, wasmURL });
       engine = "ready";

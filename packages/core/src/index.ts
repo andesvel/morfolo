@@ -7,8 +7,9 @@ export type { FormatInfo } from "./formats.ts";
 export { needsEngine, targetsFor } from "./catalog.ts";
 export {
   clearEngineCache,
+  configureEngine,
   engineStatus,
   isEngineCached,
   warmupEngine,
 } from "./adapters/wasm/index.ts";
-export type { EngineStatus } from "./adapters/wasm/index.ts";
+export type { EngineConfig, EngineStatus } from "./adapters/wasm/index.ts";

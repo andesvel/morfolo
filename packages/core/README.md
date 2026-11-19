@@ -42,7 +42,18 @@ await warmupEngine((pct) => console.log(pct)); // optional: load ahead of the fi
 await clearEngineCache(); // delete the cached core and unload it
 ```
 
-If your site sets a Content Security Policy, allow `connect-src https://unpkg.com`, `script-src blob: 'wasm-unsafe-eval'` and `worker-src blob:`.
+To serve the core yourself (or pin another version), configure it before the first load:
+
+```ts
+import { configureEngine } from "@morfolo/core";
+
+// A directory with @ffmpeg/core's dist/esm files: ffmpeg-core.js and ffmpeg-core.wasm.
+configureEngine({ version: "0.12.9", baseURL: "/vendor/ffmpeg-core" });
+```
+
+It throws once the engine is loading or loaded; `configureEngine({})` restores the defaults. Each version gets its own cache, keyed by file URL.
+
+If your site sets a Content Security Policy, allow the core's origin in `connect-src` (`https://unpkg.com` by default, nothing extra when self-hosted), plus `script-src blob: 'wasm-unsafe-eval'` and `worker-src blob:`.
 
 ### Parameters
 
